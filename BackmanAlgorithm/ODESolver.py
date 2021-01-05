@@ -1,6 +1,6 @@
 import numpy as np
 
-#Author: A Primer on Scientific Programming with Python by H. P. Langtangen, 5th edition, Springer, 2016.
+# code from A Primer on Scientific Programming with Python by H. P. Langtangen, 5th edition, Springer, 2016.
 
 class ODESolver(object):
     def __init__(self, f):
@@ -52,7 +52,6 @@ class RungeKutta4(ODESolver):
         K4 = dt*f(u[k] + K3, t[k] + dt)
         u_new = u[k] + (1/6.0)*(K1 + 2*K2 + 2*K3 + K4)
         return u_new
-
 class ForwardEuler(ODESolver):
     def advance(self):
         u, f, k, t = self.u, self.f, self.k, self.t

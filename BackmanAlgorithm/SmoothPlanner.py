@@ -6,25 +6,39 @@ from StateSpaces import SmoothPathState
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
 
-    def __init__(self, kMax, kDotMax, kDotMin, vDotMax, vDotMin, initalState, finalState, kStart, kCenter, kEnd, reverse, headlandSpeed):
+    def __init__(self):
+
+        self.path = []
+
+    def setConstraints(kMax, kMin, kDotMax, kDotMin, vDotMax, vDotMin):
         self.kMax = kMax
+        self.kMin = kMin
         self.kDotMax = kDotMax
         self.kDotMin = kDotMin
         self.vDotMax = vDotMax
         self.vDotMin = vDotMin
-        self.headlandSpeed = headlandSpeed
-        self.path = []
 
-        self.initialState = initalState
-        self.finalState = finalState
-        self.k_C0 = initalState.k
+    def setStartAndGoal(initalState, finalState):
+        if not (isinstance(initalState, StateSpaces.SE2State) and isinstance(initalState, StateSpaces.SE2State)):
+            raise TypeError('Start and Goal not SE2States')
+        else:
+            self.initialState = initalState
+            self.finalState = finalState
+            self.headlandSpeed = finalState.v
+            self.k_C0 = initalState.k
+
+    def setNominalCurvatures(kStart, kCenter, kEnd, reverse):
+
         self.k_C1 = kStart
         self.k_C2 = kCenter
         self.k_C3 = kEnd
+        self.reverse = reverse
 
     def generateCurvatureTrajectory(self, kInit, kFinal, dT, tInit):
         """
         Eqn. 4 from paper
+
+        TODO: remove reference to tInit
         """
         kTolerance = 0.05
 
@@ -37,7 +51,7 @@ class SmoothPathPlanner:
             if k < kFinal:
                 k = k + dT*self.kDotMax
             else:
-                k = k - dT*self.kDotMin
+                k = k + dT*self.kDotMin
             t = t + dT
 
             kTrajectory.append([k, t])
@@ -47,6 +61,8 @@ class SmoothPathPlanner:
     def generateSpeedTrajectory(self, vInit, vFinal, dT, tInit):
         """
         Eqn. 7 from paper
+
+        TODO: remove reference to tInit
         """
         vTolerance = 0.05
 
@@ -59,32 +75,30 @@ class SmoothPathPlanner:
             if v < vFinal:
                 v = v + dT*self.vDotMax
             else:
-                v = v - dT*self.vDotMin
+                v = v + dT*self.vDotMin
             t = t + dT
 
             vTrajectory.append([v, t])
 
         return vTrajectory
 
-    def f(u,t):
-        x = u[0]
-        y = u[1]
+    def f(u, t):
+        v, k = u[0], u[1]
+
+        thetaDot =
+        y =
         theta = u[2]
 
-        
+    def integrateTrajectory(kTrajectory, vTrajectory, Xo):
 
-    def integrateTrajectory(kTrajectory,vTrajectory, Xo):
-        
         X = []
         X.append(Xo)
 
-        f = 
-        
-        if not (len(kTrajectory) == len(vTrajectory)):
+        if (not (len(kTrajectory) == len(vTrajectory))):
             print("curvature and speed trajectories not same length")
             return 0
         else:
-            
+
             return X
 
     def plan(self):
@@ -94,12 +108,13 @@ class SmoothPathPlanner:
         while path_is_not_feasible:
             K_S1 = self.generateCurvatureTrajectory(
                 self.k_C0, self.k_C1, 0.005, 0)
-            v_S1 = self.generateSpeedTrajectory(self.initialState.v, self.headlandSpeed, 0.005, 0)
+            v_S1 = self.generateSpeedTrajectory(
+                self.initialState.v, self.headlandSpeed, 0.005, 0)
 
-            #make trajectories equal length
+            # make trajectories equal length
             v_S1 = v_S1[0:len(K_S1)]
 
-            S1 = integrateTrajectory(K_S1,v_S1)
+            #S1 = integrateTrajectory(K_S1,v_S1)
 
         return self.path
 
@@ -111,22 +126,23 @@ def main():
     finalState = SmoothPathState(2, 0, -0.5*np.pi, 1, 0)
     turningRadius = 1  # m
     kMax = 1/turningRadius
+    kMin = -kMax
     kDotMax = 1  # max derivative of curvature
     kDotMin = -1  # min derivative of curvature
     vDotMax = 1
     vDotMin = -1
     headlandSpeed = 1
 
-    RSRPathDetail = [KMax, 0, KMax, False]
+    RSRPathDetail = [kMin, 0, kMin, False]
     #LSLPathDetail = [KMax, 0, KMax, False]
-    #LRLPathDetail = [KMax, KMax, KMax, False]
-    #RLRPathDetail = [KMax, KMax, KMax, False]
-    #LSRPathDetail = [KMax, 0, KMax, False]
-    #RSLPathDetail = [KMax, 0, KMax, False]
-    #R1L1RPAthDetail = [KMax, KMax, KMax, True]
-    #L1R1LPAthDetail = [KMax, KMax, KMax, True]
+    #LRLPathDetail = [KMax, KMin, KMax, False]
+    #RLRPathDetail = [KMin, KMax, KMin, False]
+    #LSRPathDetail = [KMax, 0, KMin, False]
+    #RSLPathDetail = [KMin, 0, KMax, False]
+    #R1L1RPAthDetail = [KMin, KMax, KMin, True]
+    #L1R1LPAthDetail = [KMax, KMin, KMax, True]
 
-    planSmoothInst = SmoothPathPlanner(kMax, initialState, finalState, kDotMax, kDotMin, vDotMax, vDotMin,
+    planSmoothInst = SmoothPathPlanner(kMax, kMin, initialState, finalState, kDotMax, kDotMin, vDotMax, vDotMin,
                                        RSRPathDetail[0],  RSRPathDetail[1],  RSRPathDetail[3],  RSRPathDetail[4], headlandSpeed)
 
     path = planSmoothInst.plan()
