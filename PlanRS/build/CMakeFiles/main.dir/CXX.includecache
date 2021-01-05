@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/pc/path_planning/PlanRS/src/ReedsSheppPlanner.h
+/home/pc/smooth_curvature_path_planning/PlanRS/src/ReedsSheppPlanner.h
 ompl/base/spaces/ReedsSheppStateSpace.h
 -
 ompl/base/ScopedState.h
@@ -14,9 +14,9 @@ ompl/base/ScopedState.h
 ompl/geometric/SimpleSetup.h
 -
 
-/home/pc/path_planning/PlanRS/src/main.cpp
+/home/pc/smooth_curvature_path_planning/PlanRS/src/main.cpp
 ReedsSheppPlanner.h
-/home/pc/path_planning/PlanRS/src/ReedsSheppPlanner.h
+/home/pc/smooth_curvature_path_planning/PlanRS/src/ReedsSheppPlanner.h
 math.h
 -
 stdio.h

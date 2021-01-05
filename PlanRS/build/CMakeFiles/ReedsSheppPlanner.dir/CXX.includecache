@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/pc/path_planning/PlanRS/src/ReedsSheppPlanner.cpp
+/home/pc/smooth_curvature_path_planning/PlanRS/src/ReedsSheppPlanner.cpp
 ReedsSheppPlanner.h
-/home/pc/path_planning/PlanRS/src/ReedsSheppPlanner.h
+/home/pc/smooth_curvature_path_planning/PlanRS/src/ReedsSheppPlanner.h
 boost/program_options.hpp
 -
 ompl/base/objectives/PathLengthOptimizationObjective.h
@@ -16,6 +16,8 @@ ompl/base/objectives/PathLengthOptimizationObjective.h
 ompl/geometric/planners/rrt/InformedRRTstar.h
 -
 ompl/geometric/planners/rrt/RRTstar.h
+-
+ompl/geometric/planners/rrt/RRTConnect.h
 -
 ompl/base/PlannerData.h
 -
@@ -28,7 +30,7 @@ iostream
 memory
 -
 
-/home/pc/path_planning/PlanRS/src/ReedsSheppPlanner.h
+/home/pc/smooth_curvature_path_planning/PlanRS/src/ReedsSheppPlanner.h
 ompl/base/spaces/ReedsSheppStateSpace.h
 -
 ompl/base/ScopedState.h
@@ -461,6 +463,12 @@ ompl/util/RandomNumbers.h
 /opt/ros/kinetic/include/ompl/geometric/planners/rrt/InformedRRTstar.h
 ompl/geometric/planners/rrt/RRTstar.h
 /opt/ros/kinetic/include/ompl/geometric/planners/rrt/ompl/geometric/planners/rrt/RRTstar.h
+
+/opt/ros/kinetic/include/ompl/geometric/planners/rrt/RRTConnect.h
+ompl/geometric/planners/PlannerIncludes.h
+/opt/ros/kinetic/include/ompl/geometric/planners/rrt/ompl/geometric/planners/PlannerIncludes.h
+ompl/datastructures/NearestNeighbors.h
+/opt/ros/kinetic/include/ompl/geometric/planners/rrt/ompl/datastructures/NearestNeighbors.h
 
 /opt/ros/kinetic/include/ompl/geometric/planners/rrt/RRTstar.h
 ompl/geometric/planners/PlannerIncludes.h

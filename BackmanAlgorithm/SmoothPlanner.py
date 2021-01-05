@@ -1,88 +1,137 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from ODESolver import RungeKutta4
+from StateSpaces import SmoothPathState
 
-# Read RSpath.txt into array
 
-RSPathString = open("./../PlanRS/rspath.txt").read().strip().split('\n')
+class SmoothPathPlanner:
+    """ class for implementation of backman algorithm"""
 
-RSPathArray = np.zeros((len(RSPathString), 3))
+    def __init__(self, kMax, kDotMax, kDotMin, vDotMax, vDotMin, initalState, finalState, kStart, kCenter, kEnd, reverse, headlandSpeed):
+        self.kMax = kMax
+        self.kDotMax = kDotMax
+        self.kDotMin = kDotMin
+        self.vDotMax = vDotMax
+        self.vDotMin = vDotMin
+        self.headlandSpeed = headlandSpeed
+        self.path = []
 
-for i in range(len(RSPathString)):
-    RSPathArray_i = RSPathString[i].strip().split(' ')
-    for j in range(len(RSPathArray_i)):
-        RSPathArray[i][j] = float(RSPathArray_i[j])
+        self.initialState = initalState
+        self.finalState = finalState
+        self.k_C0 = initalState.k
+        self.k_C1 = kStart
+        self.k_C2 = kCenter
+        self.k_C3 = kEnd
 
-RSPointsXArray = np.zeros((len(RSPathString)))
-RSPointsYArray = np.zeros((len(RSPathString)))
-RSPointsThArray = np.zeros((len(RSPathString)))
+    def generateCurvatureTrajectory(self, kInit, kFinal, dT, tInit):
+        """
+        Eqn. 4 from paper
+        """
+        kTolerance = 0.05
 
-for i in range(len(RSPathArray)):
-    RSPointsXArray[i] = RSPathArray[i][0]
-    RSPointsYArray[i] = RSPathArray[i][1]
-    RSPointsThArray[i] = RSPathArray[i][2]
+        k = kInit
+        t = tInit
 
-#plot path
-plot_path = True
-if plot_path:
-    plt.plot(RSPointsXArray, RSPointsYArray)
-    for i in range(0,len(RSPathArray),max(len(RSPathArray)/50, 5)):
-        plt.arrow(RSPointsXArray[i], RSPointsYArray[i], 0.1*np.cos(RSPointsThArray[i]),0.1*np.sin(RSPointsThArray[i]), length_includes_head = True, width = 0.002, head_width = 0.003, color = 'r', alpha = 0.5)
-    plt.ylabel('some numbers')
-    plt.show()
+        kTrajectory = []
 
-def check_curve(points, tolerance, curvature):
-    """ 
-    input(points: 3xN np.array of SE2 poses
-          tolerance: float tolerance of checking)
-    
-    ouput(
-    """
+        while np.abs(k - kFinal) < kTolerance:
+            if k < kFinal:
+                k = k + dT*self.kDotMax
+            else:
+                k = k - dT*self.kDotMin
+            t = t + dT
 
-    straight = True
-    right = True
-    left = True
+            kTrajectory.append([k, t])
 
-    #lastX = points[0][0]
-    #lastY = points[0][1]
-    lastTheta = points[0][2]
+        return kTrajectory
 
-    #test if a solid curve
-    for i in range(len(points)):
-        #dX = points[i][0] - lastX
-        #dY = points[i][1] - lastY
-        dTheta = points[i][2] - lastTheta
+    def generateSpeedTrajectory(self, vInit, vFinal, dT, tInit):
+        """
+        Eqn. 7 from paper
+        """
+        vTolerance = 0.05
+
+        v = vInit
+        t = tInit
+
+        vTrajectory = []
+
+        while np.abs(v - vFinal) < vTolerance:
+            if v < vFinal:
+                v = v + dT*self.vDotMax
+            else:
+                v = v - dT*self.vDotMin
+            t = t + dT
+
+            vTrajectory.append([v, t])
+
+        return vTrajectory
+
+    def f(u,t):
+        x = u[0]
+        y = u[1]
+        theta = u[2]
+
         
-        print(dTheta)
 
-        if np.absolute(dTheta) < tolerance*2*3.141519265:
-            straight = False
+    def integrateTrajectory(kTrajectory,vTrajectory, Xo):
         
-        if dTheta - tolerance > 0:
-            left = False
+        X = []
+        X.append(Xo)
+
+        f = 
         
-        if dTheta + tolerance < 0:
-            right = False
-    
-        #lastX = points[i][0]
-        #lastY = points[i][1]
-        lastTheta = points[i][2]
+        if not (len(kTrajectory) == len(vTrajectory)):
+            print("curvature and speed trajectories not same length")
+            return 0
+        else:
+            
+            return X
 
-    if straight + right + left > 1: 
-        #raise Exception("More than one curve detected, try changing tolerance.")
-        print("More than one curve detected, try changing tolerance.")
-        return [straight,right,left]
-    
-    if straight:
-        return "straight"
-    
-    if right:
-        return "right"
+    def plan(self):
 
-    if left:
-        return "left"
-    
-    else:
-        return 0
+        path_is_not_feasible = True
 
-for i in range(0,len(RSPathArray),5):
-    check_curve(RSPathArray[i:i+5], 0.00001)
+        while path_is_not_feasible:
+            K_S1 = self.generateCurvatureTrajectory(
+                self.k_C0, self.k_C1, 0.005, 0)
+            v_S1 = self.generateSpeedTrajectory(self.initialState.v, self.headlandSpeed, 0.005, 0)
+
+            #make trajectories equal length
+            v_S1 = v_S1[0:len(K_S1)]
+
+            S1 = integrateTrajectory(K_S1,v_S1)
+
+        return self.path
+
+
+def main():
+
+    # x pos., ypos., orientation, speed, curvature
+    initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(2, 0, -0.5*np.pi, 1, 0)
+    turningRadius = 1  # m
+    kMax = 1/turningRadius
+    kDotMax = 1  # max derivative of curvature
+    kDotMin = -1  # min derivative of curvature
+    vDotMax = 1
+    vDotMin = -1
+    headlandSpeed = 1
+
+    RSRPathDetail = [KMax, 0, KMax, False]
+    #LSLPathDetail = [KMax, 0, KMax, False]
+    #LRLPathDetail = [KMax, KMax, KMax, False]
+    #RLRPathDetail = [KMax, KMax, KMax, False]
+    #LSRPathDetail = [KMax, 0, KMax, False]
+    #RSLPathDetail = [KMax, 0, KMax, False]
+    #R1L1RPAthDetail = [KMax, KMax, KMax, True]
+    #L1R1LPAthDetail = [KMax, KMax, KMax, True]
+
+    planSmoothInst = SmoothPathPlanner(kMax, initialState, finalState, kDotMax, kDotMin, vDotMax, vDotMin,
+                                       RSRPathDetail[0],  RSRPathDetail[1],  RSRPathDetail[3],  RSRPathDetail[4], headlandSpeed)
+
+    path = planSmoothInst.plan()
+
+    print(path)
+
+
+main()

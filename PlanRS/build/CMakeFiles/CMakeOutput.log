@@ -10,7 +10,7 @@ The output was:
 
 Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
 
-The C compiler identification is GNU, found in "/home/pc/path_planning/PlanRS/build/CMakeFiles/3.5.1/CompilerIdC/a.out"
+The C compiler identification is GNU, found in "/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/3.5.1/CompilerIdC/a.out"
 
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
 Compiler: /usr/bin/c++ 
@@ -23,33 +23,33 @@ The output was:
 
 Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
 
-The CXX compiler identification is GNU, found in "/home/pc/path_planning/PlanRS/build/CMakeFiles/3.5.1/CompilerIdCXX/a.out"
+The CXX compiler identification is GNU, found in "/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/3.5.1/CompilerIdCXX/a.out"
 
 Determining if the C compiler works passed with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_a99db/fast"
-/usr/bin/make -f CMakeFiles/cmTC_a99db.dir/build.make CMakeFiles/cmTC_a99db.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_a99db.dir/testCCompiler.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_a99db.dir/testCCompiler.c.o   -c /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp/testCCompiler.c
-Linking C executable cmTC_a99db
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a99db.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_a99db.dir/testCCompiler.c.o  -o cmTC_a99db 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_fbc5f/fast"
+/usr/bin/make -f CMakeFiles/cmTC_fbc5f.dir/build.make CMakeFiles/cmTC_fbc5f.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_fbc5f.dir/testCCompiler.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_fbc5f.dir/testCCompiler.c.o   -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_fbc5f
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fbc5f.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_fbc5f.dir/testCCompiler.c.o  -o cmTC_fbc5f 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_2d9fb/fast"
-/usr/bin/make -f CMakeFiles/cmTC_2d9fb.dir/build.make CMakeFiles/cmTC_2d9fb.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
-Linking C executable cmTC_2d9fb
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2d9fb.dir/link.txt --verbose=1
-/usr/bin/cc      -v CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o  -o cmTC_2d9fb  
+Run Build Command:"/usr/bin/make" "cmTC_df9d4/fast"
+/usr/bin/make -f CMakeFiles/cmTC_df9d4.dir/build.make CMakeFiles/cmTC_df9d4.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_df9d4
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_df9d4.dir/link.txt --verbose=1
+/usr/bin/cc      -v CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o  -o cmTC_df9d4  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/cc
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
@@ -59,23 +59,23 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.12) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_2d9fb' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc4df4Yw.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_2d9fb /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_df9d4' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccf7warZ.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_df9d4 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
 Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_2d9fb/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_2d9fb.dir/build.make CMakeFiles/cmTC_2d9fb.dir/build]
-  ignore line: [make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building C object CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o]
-  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
-  ignore line: [Linking C executable cmTC_2d9fb]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2d9fb.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o  -o cmTC_2d9fb  ]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_df9d4/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_df9d4.dir/build.make CMakeFiles/cmTC_df9d4.dir/build]
+  ignore line: [make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building C object CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_df9d4]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_df9d4.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o  -o cmTC_df9d4  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/cc]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper]
@@ -85,13 +85,13 @@ Parsed C implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.12) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_2d9fb' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc4df4Yw.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_2d9fb /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_df9d4' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccf7warZ.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_df9d4 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/cc4df4Yw.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccf7warZ.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -108,7 +108,7 @@ Parsed C implicit link information from above output:
     arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_2d9fb] ==> ignore
+    arg [cmTC_df9d4] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -120,7 +120,7 @@ Parsed C implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_2d9fb.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [CMakeFiles/cmTC_df9d4.dir/CMakeCCompilerABI.c.o] ==> ignore
     arg [-lgcc] ==> lib [gcc]
     arg [--as-needed] ==> ignore
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -152,17 +152,17 @@ Parsed C implicit link information from above output:
 
 
 Detecting C [-std=c11] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_27f04/fast"
-/usr/bin/make -f CMakeFiles/cmTC_27f04.dir/build.make CMakeFiles/cmTC_27f04.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_27f04.dir/feature_tests.c.o
-/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_27f04.dir/feature_tests.c.o   -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_27f04
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_27f04.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_27f04.dir/feature_tests.c.o  -o cmTC_27f04 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_1ce11/fast"
+/usr/bin/make -f CMakeFiles/cmTC_1ce11.dir/build.make CMakeFiles/cmTC_1ce11.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_1ce11.dir/feature_tests.c.o
+/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_1ce11.dir/feature_tests.c.o   -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_1ce11
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1ce11.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_1ce11.dir/feature_tests.c.o  -o cmTC_1ce11 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -172,17 +172,17 @@ make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMake
 
 
 Detecting C [-std=c99] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_c9b53/fast"
-/usr/bin/make -f CMakeFiles/cmTC_c9b53.dir/build.make CMakeFiles/cmTC_c9b53.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_c9b53.dir/feature_tests.c.o
-/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_c9b53.dir/feature_tests.c.o   -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_c9b53
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c9b53.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_c9b53.dir/feature_tests.c.o  -o cmTC_c9b53 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_e22b5/fast"
+/usr/bin/make -f CMakeFiles/cmTC_e22b5.dir/build.make CMakeFiles/cmTC_e22b5.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_e22b5.dir/feature_tests.c.o
+/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_e22b5.dir/feature_tests.c.o   -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_e22b5
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e22b5.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_e22b5.dir/feature_tests.c.o  -o cmTC_e22b5 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -192,17 +192,17 @@ make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMake
 
 
 Detecting C [-std=c90] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_af335/fast"
-/usr/bin/make -f CMakeFiles/cmTC_af335.dir/build.make CMakeFiles/cmTC_af335.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_af335.dir/feature_tests.c.o
-/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_af335.dir/feature_tests.c.o   -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_af335
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_af335.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_af335.dir/feature_tests.c.o  -o cmTC_af335 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_aea62/fast"
+/usr/bin/make -f CMakeFiles/cmTC_aea62.dir/build.make CMakeFiles/cmTC_aea62.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_aea62.dir/feature_tests.c.o
+/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_aea62.dir/feature_tests.c.o   -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_aea62
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_aea62.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_aea62.dir/feature_tests.c.o  -o cmTC_aea62 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -210,30 +210,30 @@ make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMake
     Feature record: C_FEATURE:0c_static_assert
     Feature record: C_FEATURE:0c_variadic_macros
 Determining if the CXX compiler works passed with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_825b5/fast"
-/usr/bin/make -f CMakeFiles/cmTC_825b5.dir/build.make CMakeFiles/cmTC_825b5.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_825b5.dir/testCXXCompiler.cxx.o
-/usr/bin/c++      -o CMakeFiles/cmTC_825b5.dir/testCXXCompiler.cxx.o -c /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
-Linking CXX executable cmTC_825b5
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_825b5.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_825b5.dir/testCXXCompiler.cxx.o  -o cmTC_825b5 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_275bd/fast"
+/usr/bin/make -f CMakeFiles/cmTC_275bd.dir/build.make CMakeFiles/cmTC_275bd.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_275bd.dir/testCXXCompiler.cxx.o
+/usr/bin/c++      -o CMakeFiles/cmTC_275bd.dir/testCXXCompiler.cxx.o -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_275bd
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_275bd.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_275bd.dir/testCXXCompiler.cxx.o  -o cmTC_275bd 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_92f2d/fast"
-/usr/bin/make -f CMakeFiles/cmTC_92f2d.dir/build.make CMakeFiles/cmTC_92f2d.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o
-/usr/bin/c++      -o CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
-Linking CXX executable cmTC_92f2d
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_92f2d.dir/link.txt --verbose=1
-/usr/bin/c++       -v CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_92f2d  
+Run Build Command:"/usr/bin/make" "cmTC_48c69/fast"
+/usr/bin/make -f CMakeFiles/cmTC_48c69.dir/build.make CMakeFiles/cmTC_48c69.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o
+/usr/bin/c++      -o CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_48c69
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_48c69.dir/link.txt --verbose=1
+/usr/bin/c++       -v CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_48c69  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/c++
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
@@ -243,23 +243,23 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.12) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_92f2d' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc2BGaCZ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_92f2d /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_48c69' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cciXMPTD.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_48c69 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
 Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_92f2d/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_92f2d.dir/build.make CMakeFiles/cmTC_92f2d.dir/build]
-  ignore line: [make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building CXX object CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o]
-  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
-  ignore line: [Linking CXX executable cmTC_92f2d]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_92f2d.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_92f2d  ]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_48c69/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_48c69.dir/build.make CMakeFiles/cmTC_48c69.dir/build]
+  ignore line: [make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building CXX object CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_48c69]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_48c69.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_48c69  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/c++]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper]
@@ -269,13 +269,13 @@ Parsed CXX implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.12) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_92f2d' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc2BGaCZ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_92f2d /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_48c69' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cciXMPTD.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_48c69 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/cc2BGaCZ.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/cciXMPTD.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -292,7 +292,7 @@ Parsed CXX implicit link information from above output:
     arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_92f2d] ==> ignore
+    arg [cmTC_48c69] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -304,7 +304,7 @@ Parsed CXX implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_92f2d.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [CMakeFiles/cmTC_48c69.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
     arg [-lstdc++] ==> lib [stdc++]
     arg [-lm] ==> lib [m]
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -334,17 +334,17 @@ Parsed CXX implicit link information from above output:
 
 
 Detecting CXX [-std=c++14] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_3166f/fast"
-/usr/bin/make -f CMakeFiles/cmTC_3166f.dir/build.make CMakeFiles/cmTC_3166f.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_3166f.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_3166f.dir/feature_tests.cxx.o -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_3166f
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3166f.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_3166f.dir/feature_tests.cxx.o  -o cmTC_3166f 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_4b60c/fast"
+/usr/bin/make -f CMakeFiles/cmTC_4b60c.dir/build.make CMakeFiles/cmTC_4b60c.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_4b60c.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_4b60c.dir/feature_tests.cxx.o -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_4b60c
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4b60c.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_4b60c.dir/feature_tests.cxx.o  -o cmTC_4b60c 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:1cxx_aggregate_default_initializers
@@ -407,17 +407,17 @@ make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMake
 
 
 Detecting CXX [-std=c++11] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_f69b6/fast"
-/usr/bin/make -f CMakeFiles/cmTC_f69b6.dir/build.make CMakeFiles/cmTC_f69b6.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_f69b6.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_f69b6.dir/feature_tests.cxx.o -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_f69b6
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f69b6.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_f69b6.dir/feature_tests.cxx.o  -o cmTC_f69b6 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_bbe2f/fast"
+/usr/bin/make -f CMakeFiles/cmTC_bbe2f.dir/build.make CMakeFiles/cmTC_bbe2f.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_bbe2f.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_bbe2f.dir/feature_tests.cxx.o -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_bbe2f
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bbe2f.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_bbe2f.dir/feature_tests.cxx.o  -o cmTC_bbe2f 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
@@ -480,17 +480,17 @@ make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMake
 
 
 Detecting CXX [-std=c++98] compiler features compiled with the following output:
-Change Dir: /home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp
+Change Dir: /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_30ea0/fast"
-/usr/bin/make -f CMakeFiles/cmTC_30ea0.dir/build.make CMakeFiles/cmTC_30ea0.dir/build
-make[1]: Entering directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_30ea0.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_30ea0.dir/feature_tests.cxx.o -c /home/pc/path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_30ea0
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_30ea0.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_30ea0.dir/feature_tests.cxx.o  -o cmTC_30ea0 
-make[1]: Leaving directory '/home/pc/path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_18fe9/fast"
+/usr/bin/make -f CMakeFiles/cmTC_18fe9.dir/build.make CMakeFiles/cmTC_18fe9.dir/build
+make[1]: Entering directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_18fe9.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_18fe9.dir/feature_tests.cxx.o -c /home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_18fe9
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_18fe9.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_18fe9.dir/feature_tests.cxx.o  -o cmTC_18fe9 
+make[1]: Leaving directory '/home/pc/smooth_curvature_path_planning/PlanRS/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers

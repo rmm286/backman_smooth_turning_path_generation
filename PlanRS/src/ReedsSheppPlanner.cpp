@@ -3,6 +3,7 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/base/PlannerData.h>
 #include <cmath>
 #include <fstream>

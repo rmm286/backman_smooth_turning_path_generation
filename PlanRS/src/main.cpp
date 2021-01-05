@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     float robotLength = 0.0;
 
     int easyCollision = 1;
-    float solveTime = 30.0;
+    float solveTime = 3000.0;
     float stateValidityCheckingRes = 0.005;
     int interpolateNum = 1000;
 
