@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # code from A Primer on Scientific Programming with Python by H. P. Langtangen, 5th edition, Springer, 2016.
 
 class ODESolver(object):

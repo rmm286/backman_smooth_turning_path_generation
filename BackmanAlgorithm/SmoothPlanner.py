@@ -1,7 +1,9 @@
 import numpy as np
 from ODESolver import RungeKutta4
 from StateSpaces import SmoothPathState
-
+from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
@@ -10,24 +12,29 @@ class SmoothPathPlanner:
 
         self.path = []
 
-    def setConstraints(kMax, kMin, kDotMax, kDotMin, vDotMax, vDotMin):
+    def setConstraints(self,kMax, kMin, kDotMax, kDotMin,kDDotMax, kDDotMin, vDotMax, vDotMin, vDDotMax, vDDotMin, headlandSpeed):
         self.kMax = kMax
         self.kMin = kMin
         self.kDotMax = kDotMax
         self.kDotMin = kDotMin
         self.vDotMax = vDotMax
         self.vDotMin = vDotMin
+        self.kDDotMax = kDDotMax
+        self.kDDotMin = kDDotMin
+        self.vDDotMax = vDDotMax
+        self.vDDotMin = vDDotMin
+        self.headlandSpeed = headlandSpeed
 
-    def setStartAndGoal(initalState, finalState):
-        if not (isinstance(initalState, StateSpaces.SE2State) and isinstance(initalState, StateSpaces.SE2State)):
+    def setStartAndGoal(self,initalState, finalState):
+        if not (isinstance(initalState, SmoothPathState) and isinstance(initalState, SmoothPathState)):
             raise TypeError('Start and Goal not SE2States')
         else:
             self.initialState = initalState
             self.finalState = finalState
-            self.headlandSpeed = finalState.v
             self.k_C0 = initalState.k
+            self.k_C4 = finalState.k
 
-    def setNominalCurvatures(kStart, kCenter, kEnd, reverse):
+    def setNominalCurvatures(self,kStart, kCenter, kEnd, reverse):
 
         self.k_C1 = kStart
         self.k_C2 = kCenter
@@ -38,23 +45,24 @@ class SmoothPathPlanner:
         """
         Eqn. 4 from paper
 
-        TODO: remove reference to tInit
+        TODO: optimize
         """
-        kTolerance = 0.05
+        kTolerance = 0.001
 
         k = kInit
         t = tInit
 
-        kTrajectory = []
-
-        while np.abs(k - kFinal) < kTolerance:
+        kTrajectory = np.array([[k,t]])
+        
+        while np.abs(k - kFinal) > kTolerance:
+            
             if k < kFinal:
                 k = k + dT*self.kDotMax
             else:
                 k = k + dT*self.kDotMin
             t = t + dT
 
-            kTrajectory.append([k, t])
+            kTrajectory = np.append(kTrajectory, np.array([[k,t]]), axis = 0)
 
         return kTrajectory
 
@@ -62,62 +70,120 @@ class SmoothPathPlanner:
         """
         Eqn. 7 from paper
 
-        TODO: remove reference to tInit
+        TODO: optimize
         """
         vTolerance = 0.05
 
         v = vInit
         t = tInit
 
-        vTrajectory = []
+        vTrajectory = np.array([[v, t]])
 
-        while np.abs(v - vFinal) < vTolerance:
+        while np.abs(v - vFinal) > vTolerance:
             if v < vFinal:
                 v = v + dT*self.vDotMax
             else:
                 v = v + dT*self.vDotMin
             t = t + dT
 
-            vTrajectory.append([v, t])
+            vTrajectory = np.append(vTrajectory, np.array([[v,t]]), axis = 0)
 
         return vTrajectory
 
-    def f(u, t):
-        v, k = u[0], u[1]
+    def vehicleModel(self,x,t,u):
+        v = u[0]
+        k = u[1]
+        theta = x[2]
 
-        thetaDot =
-        y =
-        theta = u[2]
+        return [v*np.cos(theta), v*np.sin(theta), k]
 
-    def integrateTrajectory(kTrajectory, vTrajectory, Xo):
-
-        X = []
-        X.append(Xo)
+    def integrateTrajectory(self, kTrajectory, vTrajectory, xo, dT):
 
         if (not (len(kTrajectory) == len(vTrajectory))):
-            print("curvature and speed trajectories not same length")
+            raise ValueError("curvature and speed trajectories not same length")
             return 0
         else:
 
-            return X
+            t = [i[1] for i in kTrajectory]
+
+            u = np.empty_like(kTrajectory)
+
+            for i in range(len(kTrajectory)):
+                
+                u[i][0] = vTrajectory[i][0]
+                u[i][1] = kTrajectory[i][0]
+
+            x = np.empty([len(kTrajectory),3])
+            x[0] = xo
+
+            for i in range(1,len(t)):
+
+                resultVal = odeint(self.vehicleModel, x[i-1], [t[i-1],t[i]], args=([u[i][0], u[i][1]],)) #integrate using LSODA
+                x[i] = resultVal[1]
+
+            return x
+
+    def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromEnd = True):
+
+        if (len(kTraj) < len(vTraj)) and fromEnd: #cut from end of vTraj
+            vTraj = vTraj[0:len(kTraj)]
+        elif (len(kTraj) < len(vTraj)) and not fromEnd: #cut from end of vTraj
+            vTraj = vTraj[len(vTraj)- len(kTraj):len(vTraj)]
+        elif (len(kTraj) > len(vTraj)) and fromEnd:
+            vTraj = np.append(vTraj, np.array([vTraj[-1] for i in range((len(kTraj)- len(vTraj)))]), axis = 0)
+        elif (len(kTraj) > len(vTraj)) and not fromEnd:
+            vTraj = np.append(np.array([vTraj[0] for i in range(len(kTraj)- len(vTraj))]),vTraj, axis = 0)
+
+        return {'kTraj': kTraj, 'vTraj':vTraj}
 
     def plan(self):
 
         path_is_not_feasible = True
+        dT = 0.05
 
         while path_is_not_feasible:
+            #generate first connecting spiral
             K_S1 = self.generateCurvatureTrajectory(
-                self.k_C0, self.k_C1, 0.005, 0)
+                self.k_C0, self.k_C1, dT, 0)
             v_S1 = self.generateSpeedTrajectory(
-                self.initialState.v, self.headlandSpeed, 0.005, 0)
+                self.initialState.v, self.headlandSpeed, dT, 0)
+            
+            trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, True)
+            
+            xo = [self.initialState.x, self.initialState.y, self.initialState.theta]
+            S1 = self.integrateTrajectory(trajectories['kTraj'], trajectories['vTraj'], xo, dT)
 
-            # make trajectories equal length
-            v_S1 = v_S1[0:len(K_S1)]
+            #generate last connecting spiral
+            K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4, dT, 0)
+            v_S4 = self.generateSpeedTrajectory(self.headlandSpeed, self.finalState.v, dT, 0)
+            #print("K_S4: ", K_S4)
+            #print("v_S4: ", v_S4)
+            trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, False)
 
-            #S1 = integrateTrajectory(K_S1,v_S1)
+            xo = [0, 0, 0]
+            S4 = self.integrateTrajectory(trajectories['kTraj'], trajectories['vTraj'], xo, dT)
+
+            path_is_not_feasible = False
+
+            
+        
+        plt.plot([i[0] for i in S1], [i[1] for i in S1])
+        plt.xlim([-0.1,1])
+        plt.ylim([-0.1,1])
+        plt.savefig("trajectory.png")
+
+        print("theta final:", S1[-1][2])
+        print("k final:", (S1[-2][2]-S1[-1][2])/dT)
+
+        plt.plot([i[0] for i in S4], [i[1] for i in S4])
+        plt.xlim([-0.1,1])
+        plt.ylim([-0.1,1])
+        plt.savefig("trajectory2.png")
+
+        print("theta final:", S4[-1][2])
+        print("k final:", (S4[-2][2]-S4[-1][2])/dT)
 
         return self.path
-
 
 def main():
 
@@ -129,8 +195,12 @@ def main():
     kMin = -kMax
     kDotMax = 1  # max derivative of curvature
     kDotMin = -1  # min derivative of curvature
+    kDDotMax = 1
+    kDDotMin = -1
     vDotMax = 1
     vDotMin = -1
+    vDDotMax = 1
+    vDDotMin = -1
     headlandSpeed = 1
 
     RSRPathDetail = [kMin, 0, kMin, False]
@@ -142,12 +212,15 @@ def main():
     #R1L1RPAthDetail = [KMin, KMax, KMin, True]
     #L1R1LPAthDetail = [KMax, KMin, KMax, True]
 
-    planSmoothInst = SmoothPathPlanner(kMax, kMin, initialState, finalState, kDotMax, kDotMin, vDotMax, vDotMin,
-                                       RSRPathDetail[0],  RSRPathDetail[1],  RSRPathDetail[3],  RSRPathDetail[4], headlandSpeed)
+    planSmoothInst = SmoothPathPlanner()
+
+    planSmoothInst.setConstraints(kMax, kMin, kDotMax, kDotMin,kDDotMax, kDDotMin, vDotMax, vDotMin, vDDotMax, vDDotMin, headlandSpeed)
+    planSmoothInst.setNominalCurvatures(RSRPathDetail[0], RSRPathDetail[1], RSRPathDetail[2], RSRPathDetail[3])
+    planSmoothInst.setStartAndGoal(initialState, finalState)
 
     path = planSmoothInst.plan()
 
-    print(path)
+    #print(path)
 
 
 main()
