@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import sin, cos, tan
 from ODESolver import RungeKutta4
 from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
@@ -95,7 +96,7 @@ class SmoothPathPlanner:
         k = u[1]
         theta = x[2]
 
-        return [v*np.cos(theta), v*np.sin(theta), k]
+        return [v*cos(theta), v*sin(theta), k]
 
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo, dT):
 
@@ -119,22 +120,43 @@ class SmoothPathPlanner:
             for i in range(1,len(t)):
 
                 resultVal = odeint(self.vehicleModel, x[i-1], [t[i-1],t[i]], args=([u[i][0], u[i][1]],)) #integrate using LSODA
+                
                 x[i] = resultVal[1]
 
             return x
 
-    def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromEnd = True):
+    def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromStart = False):
 
-        if (len(kTraj) < len(vTraj)) and fromEnd: #cut from end of vTraj
+        if (len(kTraj) < len(vTraj)) and not fromStart: #cut from end of vTraj
             vTraj = vTraj[0:len(kTraj)]
-        elif (len(kTraj) < len(vTraj)) and not fromEnd: #cut from end of vTraj
+        elif (len(kTraj) < len(vTraj)) and fromStart: #cut from end of vTraj
             vTraj = vTraj[len(vTraj)- len(kTraj):len(vTraj)]
-        elif (len(kTraj) > len(vTraj)) and fromEnd:
+        elif (len(kTraj) > len(vTraj)) and not fromStart:
             vTraj = np.append(vTraj, np.array([vTraj[-1] for i in range((len(kTraj)- len(vTraj)))]), axis = 0)
-        elif (len(kTraj) > len(vTraj)) and not fromEnd:
+        elif (len(kTraj) > len(vTraj)) and fromStart:
             vTraj = np.append(np.array([vTraj[0] for i in range(len(kTraj)- len(vTraj))]),vTraj, axis = 0)
 
         return {'kTraj': kTraj, 'vTraj':vTraj}
+
+    def relocatePath(self, path, point, relocateStartPoint = True):
+        """Use Homogenous Transform to relocate a path to a point
+            TODO: optimize function and use Homogenous TF efficiently if necessary
+        """
+
+        if not (len(path[1]) == len(point)):
+            raise ValueError("Path and Point are not of suitable dimension")
+        
+        index = 0 if relocateStartPoint else -1
+        pathPoint = path[index]
+        tf = point - pathPoint
+        H = np.array([ [cos(tf[2]), -sin(tf[2]), 0], [sin(tf[2]), cos(tf[2]), 0], [0, 0, 1] ])
+        pathHomogenous = np.array([[i[0]-pathPoint[0], i[1]-pathPoint[1], 1] for i in path]).T 
+        pathTF = np.matmul(H, pathHomogenous).T * [1, 1, 0]
+
+        pathTF = (pathTF) + [point[0] - pathTF[-1][0], point[1] - pathTF[-1][1],  0]
+        
+        return pathTF
+
 
     def plan(self):
 
@@ -148,7 +170,7 @@ class SmoothPathPlanner:
             v_S1 = self.generateSpeedTrajectory(
                 self.initialState.v, self.headlandSpeed, dT, 0)
             
-            trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, True)
+            trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
             
             xo = [self.initialState.x, self.initialState.y, self.initialState.theta]
             S1 = self.integrateTrajectory(trajectories['kTraj'], trajectories['vTraj'], xo, dT)
@@ -156,12 +178,14 @@ class SmoothPathPlanner:
             #generate last connecting spiral
             K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4, dT, 0)
             v_S4 = self.generateSpeedTrajectory(self.headlandSpeed, self.finalState.v, dT, 0)
-            #print("K_S4: ", K_S4)
-            #print("v_S4: ", v_S4)
-            trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, False)
+
+            trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, True)
 
             xo = [0, 0, 0]
             S4 = self.integrateTrajectory(trajectories['kTraj'], trajectories['vTraj'], xo, dT)
+
+            relocatePoint = [self.finalState.x, self.finalState.y, self.finalState.theta]
+            S4 = self.relocatePath(S4, relocatePoint, False)
 
             path_is_not_feasible = False
 
@@ -176,9 +200,10 @@ class SmoothPathPlanner:
         print("k final:", (S1[-2][2]-S1[-1][2])/dT)
 
         plt.plot([i[0] for i in S4], [i[1] for i in S4])
-        plt.xlim([-0.1,1])
-        plt.ylim([-0.1,1])
-        plt.savefig("trajectory2.png")
+        #plt.plot([i*0.01 for i in range(0,200)], [0 for i in range(0,200)])
+        plt.xlim([-2.5,2.5])
+        plt.ylim([-2.5,2.5])
+        plt.savefig("trajectory3.png")
 
         print("theta final:", S4[-1][2])
         print("k final:", (S4[-2][2]-S4[-1][2])/dT)
