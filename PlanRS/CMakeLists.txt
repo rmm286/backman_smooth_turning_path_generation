@@ -4,7 +4,7 @@ project(PlanRS VERSION 1.0)
 
 add_compile_options(-std=c++11)
 
-find_package(OMPL)
+find_package(ompl REQUIRED)
 if (NOT OMPL_FOUND)
   message(SEND_ERROR "Failed to find OMPL! Install OMPL and try again!")
 endif ()
