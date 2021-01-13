@@ -145,9 +145,11 @@ class SmoothPathPlanner:
         elif (len(kTraj) < len(vTraj)) and fromStart:  # cut from start of vTraj
             vTraj = vTraj[len(vTraj) - len(kTraj):len(vTraj)]
         elif (len(kTraj) > len(vTraj)) and not fromStart:
-            vTraj = np.append(vTraj, np.array([vTraj[-1] for i in range((len(kTraj) - len(vTraj)))]), axis=0)
+            vTraj = np.append(vTraj, np.array(
+                [vTraj[-1] for i in range((len(kTraj) - len(vTraj)))]), axis=0)
         elif (len(kTraj) > len(vTraj)) and fromStart:
-            vTraj = np.append(np.array([vTraj[0] for i in range(len(kTraj) - len(vTraj))]), vTraj, axis = 0)
+            vTraj = np.append(
+                np.array([vTraj[0] for i in range(len(kTraj) - len(vTraj))]), vTraj, axis=0)
 
         return {'kTraj': kTraj, 'vTraj': vTraj}
 
@@ -158,47 +160,48 @@ class SmoothPathPlanner:
         """
 
         # find zero point in kTraj
-        kValArray=[np.abs(i[0]) for i in kTraj]
-        vValArray=[np.abs(i[0]) for i in vTraj]
-        kZeroIndex=np.argmin(kValArray)
-        vZeroIndex=np.argmin(vValArray)
+        kValArray = [np.abs(i[0]) for i in kTraj]
+        vValArray = [np.abs(i[0]) for i in vTraj]
+        kZeroIndex = np.argmin(kValArray)
+        vZeroIndex = np.argmin(vValArray)
 
-        kZeroTime=kTraj[kZeroIndex][1]
+        kZeroTime = kTraj[kZeroIndex][1]
 
         if kZeroIndex < vZeroIndex:
-            diff=vZeroIndex - kZeroIndex
-            kTrajExtension=np.array(
+            diff = vZeroIndex - kZeroIndex
+            kTrajExtension = np.array(
                 [[0, kTraj[kZeroIndex] + (i+1)*dT] for i in range(diff)])
-            kTraj=np.insert(kTraj, kZeroIndex, kTrajExtension, axis = 0)
+            kTraj = np.insert(kTraj, kZeroIndex, kTrajExtension, axis=0)
 
             return self.makeTrajectoriesEqualLength(kTraj, vTraj)
         else:
-            diff=kZeroIndex - vZeroIndex
-            vTrajExtension=np.array(
+            diff = kZeroIndex - vZeroIndex
+            vTrajExtension = np.array(
                 [[0, vTraj[kZeroIndex] + (i+1)*dT] for i in range(diff)])
-            vTraj=np.insert(vTraj, vZeroIndex, vTrajExtension, axis = 0)
+            vTraj = np.insert(vTraj, vZeroIndex, vTrajExtension, axis=0)
 
             return self.makeTrajectoriesEqualLength(kTraj, vTraj)
 
-    def relocatePath(self, path, point, relocateStartPoint = True):
+    def relocatePath(self, path, point, relocateStartPoint=True):
         """Use Homogenous Transform to relocate a path to a point
             TODO: optimize function and use Homogenous TF efficiently
+            TODO: get orienttion values
         """
 
         if not (len(path[1]) == len(point)):
             raise ValueError("Path and Point are not of suitable dimension")
 
-        index=0 if relocateStartPoint else -1
-        pathPoint=path[index]
-        tf=point - pathPoint
-        H=np.array([[cos(tf[2]), -sin(tf[2]), 0],
+        index = 0 if relocateStartPoint else -1
+        pathPoint = path[index]
+        tf = point - pathPoint
+        H = np.array([[cos(tf[2]), -sin(tf[2]), 0],
                       [sin(tf[2]), cos(tf[2]), 0], [0, 0, 1]])
-        pathHomogenous=np.array(
+        pathHomogenous = np.array(
             [[i[0]-pathPoint[0], i[1]-pathPoint[1], 1] for i in path]).T
-        pathTF=np.matmul(H, pathHomogenous).T * [1, 1, 0]
+        pathTF = np.matmul(H, pathHomogenous).T * [1, 1, 0] + np.array([[0, 0, i[2]] for i in path])
 
-        pathTF=(pathTF) + [point[0] - pathTF[-1]
-                             [0], point[1] - pathTF[-1][1],  0]
+        pathTF = (pathTF) + [point[0] - pathTF[-1]
+                             [0], point[1] - pathTF[-1][1],  tf[2]]
 
         return pathTF
 
@@ -211,27 +214,82 @@ class SmoothPathPlanner:
         k_C2 = self.k_C2
         k_C3 = self.k_C3
 
-        omega_S2_tC2 = np.array([S2[-1][0] - (k_C2**-1)*sin(S2[-1][2]), S2[-1][1] + (k_C2**-1)*cos(S2[-1][2])])
-        omega_S2_tS2 = np.array([S2[0][0] - (k_C1**-1)*sin(S2[0][2]), S2[0][1] + (k_C1**-1)*cos(S2[0][2])])
+        omega_S2_tC2 = np.array(
+            [S2[-1][0] - (k_C2**-1)*sin(S2[-1][2]), S2[-1][1] + (k_C2**-1)*cos(S2[-1][2])])
+        omega_S2_tS2 = np.array(
+            [S2[0][0] - (k_C1**-1)*sin(S2[0][2]), S2[0][1] + (k_C1**-1)*cos(S2[0][2])])
 
-        omega_S3_tC3 = np.array([S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])])
-        omega_S3_tS3 = np.array([S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])])
+        omega_S3_tC3 = np.array(
+            [S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])])
+        omega_S3_tS3 = np.array(
+            [S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])])
 
-        omega_k = np.array([S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])])
-        omega_kplus2 = np.array([S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])])
+        self.omega_k = np.array(
+            [S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])])
+        self.omega_kplus2 = np.array(
+            [S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])])
 
-        d1 = np.linalg.norm(omega_S4_tS4 - omega_S1_tC1)
+        d1 = np.linalg.norm(self.omega_kplus2 - self.omega_k)
         d2 = np.linalg.norm(omega_S2_tC2 - omega_S2_tS2)
-        d3 = np.linalg.norm(omega_kplus2 - omega_k)
+        d3 = np.linalg.norm(omega_S3_tC3 - omega_S3_tS3)
 
         l1 = (d2**2 - d3**2 + d1**2)/(2*d1)
-        if(l1 < d2):
+        if(l1 > d2):
             return False
         l2 = np.sqrt(d2**2 - l1**2)
 
         signVal = 1 if (k_C2 < 0) else -1
+        self.omega_kplus1 = self.omega_k + l1*(self.omega_kplus2 - self.omega_k)/d1 + signVal*l2*np.matmul(
+            np.array([[0, -1], [1, 0]]), (self.omega_kplus2 - self.omega_k))/d1
 
-        return omega_k + l1*(omega_kplus2 - omega_k)/d1 + signVal*l2*np.matmul(np.array([[0, -1], [1, 0]]), (omega_kplus2 - omega_k))/d1
+        return self.omega_kplus1
+
+    def searchC1C2(self):
+        S1 = self.S1
+        S2 = self.S2
+        S3 = self.S3
+        S4 = self.S4
+        k_C1 = self.k_C1
+        k_C2 = self.k_C2
+        k_C3 = self.k_C3
+        omega_1 = self.omega_k
+        omega_2 = self.omega_kplus1
+        omega_3 = self.omega_kplus2
+
+        searchResolution = 200
+        serachTolerance = 0.5
+        thetaSearch = np.linspace(0, 2*np.pi, searchResolution)
+
+        thetaAB = S2[-1][2] - S2[0][2]
+        rAB = np.array([S2[-1][0] - S2[0][0], S2[-1][1] - S2[0][1]])
+        
+        bestNorm = 100000
+
+        for theta in thetaSearch:
+            thetaT = theta + np.pi/2.0
+            R = np.array([[cos(thetaT), -sin(thetaT)], [sin(thetaT), cos(thetaT)]])
+            rAB = np.matmul(R,rAB)
+            pointA = np.array(
+                [(k_C1**-1)*cos(theta) + omega_1[0], (k_C1**-1)*sin(theta) + omega_1[1]])
+            thetaTangentA = np.pi/2.0 + theta
+            pointB = np.array([pointA[0] + rAB[0], pointA[0] + rAB[1]])
+            thetaTangentB = np.pi/2.0 + thetaAB
+
+            theta2 = -1*np.pi/2.0 - thetaTangentB
+
+            pointOnCircle2 = np.array(
+                [-1*(k_C2**-1)*cos(-1*theta2) + omega_2[0], (k_C2**-1)*sin(-1*theta2) + omega_2[1]])
+
+            currentNorm = np.linalg.norm(pointB - pointOnCircle2)
+            if (currentNorm < bestNorm):
+                bestNorm = currentNorm
+                bestPoint = pointA
+
+        if (bestNorm < serachTolerance):
+            return np.array([bestPoint[0], bestPoint[1], -1*thetaTangentB])
+        else:
+            raise ValueError("Search of C1 C2 failed.")
+            print("Best Norm", bestNorm)
 
     def plan(self, dT):
 
@@ -297,7 +355,7 @@ class SmoothPathPlanner:
                     len_v_S2 = len(v_S2)
                     extend_v_S2 = np.array([[v_S1[-1][0], 0]
                                             for i in range(len(K_S2) - len_v_S2)])
-                    v_S2 = np.append(v_S2, extend_v_S2, axis = 0)
+                    v_S2 = np.append(v_S2, extend_v_S2, axis=0)
                     # print(len(v_S2))
                     # print(len(K_S2))
                 else:
@@ -322,7 +380,7 @@ class SmoothPathPlanner:
                     len_v_S3 = len(v_S3)
                     extend_v_S3 = np.array([[v_S4[-1][0], 0]
                                             for i in range(len(K_S3) - len_v_S3)])
-                    v_S3 = np.append(v_S3,extend_v_S3, axis = 0)
+                    v_S3 = np.append(v_S3, extend_v_S3, axis=0)
                     # print(len(v_S2))
                     # print(len(K_S2))
                 else:
@@ -331,30 +389,36 @@ class SmoothPathPlanner:
                 self.S3 = self.integrateTrajectory(K_S3, v_S3, xo)
 
             ################ generate center arc ################
-            if self.k_C2 > 0.05: #center is an arc
+            if np.abs(self.k_C2) > 0.05:  # center is an arc
                 omega_C2 = self.calculateCenterArc()
 
-                if not omega_C2 return False
+                if omega_C2.all() == False:
+                    return False
 
-
-            
-
-
-
-
+            relocatePoint = self.searchC1C2()
+            self.S2 = self.relocatePath(self.S2, relocatePoint)
 
             self.path_is_not_feasible = False
-
-        
-
 
         # plotting stuff
         plt.plot([i[0] for i in self.S1], [i[1] for i in self.S1])
         plt.plot([i[0] for i in self.S2], [i[1] for i in self.S2])
-        plt.plot([i[0] for i in self.S3], [i[1] for i in self.S3])
+        #plt.plot([i[0] for i in self.S3], [i[1] for i in self.S3])
         plt.plot([i[0] for i in self.S4], [i[1] for i in self.S4])
-        plt.xlim([-1, 3])
-        plt.ylim([-1, 3])
+
+        plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
+        plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
+        plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
+
+        plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                 [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                 [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                 [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+
+        plt.xlim([-1, 4])
+        plt.ylim([-1, 4])
         plt.savefig("trajectory.png")
 
         return self.path
@@ -364,7 +428,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(2, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(1.5, 0, -0.5*np.pi, 1, 0)
     turningRadius = 1.0  # m
     dT = 0.005
 
@@ -398,7 +462,6 @@ def main():
     # L1R1L = [KMax, KMin, KMax, True]
 
     planSmoothInst = SmoothPathPlanner()
-
 
     pathType = LRL
     planSmoothInst.setConstraints(
