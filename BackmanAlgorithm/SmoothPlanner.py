@@ -15,6 +15,7 @@ class SmoothPathPlanner:
         self.path = []
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
+        """ Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. """
 
         self.kMax = kConstraints[0]
         self.kMin = kConstraints[1]
@@ -34,6 +35,8 @@ class SmoothPathPlanner:
         self.headlandSpeedReverse = headlandSpeedReverse
 
     def setStartAndGoal(self, initalState, finalState):
+        """ Set Start and Goal States, both states must be SE2States """
+
         if not (isinstance(initalState, SmoothPathState) and isinstance(initalState, SmoothPathState)):
             raise TypeError('Start and Goal not SE2States')
         else:
@@ -43,6 +46,15 @@ class SmoothPathPlanner:
             self.k_C4 = finalState.k
 
     def setNominalCurvatures(self, kStart, kCenter, kEnd, reverse):
+        """ 
+        Set the curvature for each constant curvature segment.
+            
+        Input:
+            kStart: Curvature of first constant curvature segment
+            kCenter: Curvature of middle constant curvature segment
+            kEnd: Curvature of final constant curvature segment
+            reverse: Whether the middle segment is driven with reverse speed
+        """
 
         self.k_C1 = kStart
         self.k_C2 = kCenter
@@ -51,40 +63,40 @@ class SmoothPathPlanner:
 
     def generateCurvatureTrajectory(self, kInit, kFinal, tInit):
         """
-        Eqn. 4 from paper
+        Generates a curvature trajectory which has starting curvature equal to kInit and final curvature equal to kFinal. Time values start form tInit and increment by self.dT
 
-        TODO: optimize
+        Eqn. 4 from paper.
+
+        TODO: implement kDDot constraints
         """
-        kTolerance = 0.05
 
+        kTolerance = 0.05
         k = kInit
         t = tInit
-
         kTrajectory = np.array([[k, t]])
 
         while np.abs(k - kFinal) > kTolerance:
-
             if k < kFinal:
                 k = k + self.dT*self.kDotMax
             else:
                 k = k + self.dT*self.kDotMin
             t = t + self.dT
-
             kTrajectory = np.append(kTrajectory, np.array([[k, t]]), axis=0)
 
         return kTrajectory
 
     def generateSpeedTrajectory(self, vInit, vFinal, tInit):
         """
-        Eqn. 7 from paper
+        Generates a velocity trajectory which has starting velcoity equal to vInit and final velocity equal to vFinal. Time values start form tInit and increment by self.dT
 
-        TODO: optimize
+        Eqn. 7 from paper.
+
+        TODO: implement vDDot constraints
         """
-        vTolerance = 0.05
 
+        vTolerance = 0.05
         v = vInit
         t = tInit
-
         vTrajectory = np.array([[v, t]])
 
         while np.abs(v - vFinal) > vTolerance:
@@ -93,12 +105,23 @@ class SmoothPathPlanner:
             else:
                 v = v + self.dT*self.vDotMin
             t = t + self.dT
-
             vTrajectory = np.append(vTrajectory, np.array([[v, t]]), axis=0)
 
         return vTrajectory
 
     def vehicleModel(self, x, t, u):
+        """ 
+        Dynamic model for advancing integrator. Based on common bicycle model.
+
+        Input:
+            x: current state of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
+            t: time point, not used in model
+            u: Control vector, u[0] = velocity control value u[1] = curvature control value
+
+        Output:
+            x: next state of model based on control and previous state, x[0] = x, x[1] = y, x[2] = theta (orientation)
+        """
+
         v = u[0]
         k = u[1]
         theta = x[2]
@@ -106,37 +129,40 @@ class SmoothPathPlanner:
         return [v*cos(theta), v*sin(theta), k]
 
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo):
+        """ 
+        Performs integration on dyanmic model using LSODA from odeint. kTrajetory and vTrajectory must be of equal length.
+
+        Input:
+            kTrajectory: Array of [curvature, time] values for each timestep
+            vTrajectory: Array of [velocity, time] values for each timestep
+            xo: Inital pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
+
+        Output:
+            x: An array of [x,y,theta] poses for each timestep.
+        """
 
         if (not (len(kTrajectory) == len(vTrajectory))):
             raise ValueError(
                 "curvature and speed trajectories not same length")
-            return 0
-        else:
+    
+        t = [i[1] for i in kTrajectory]
+        u = np.empty_like(kTrajectory)
+        for i in range(len(kTrajectory)):
+            u[i][0] = vTrajectory[i][0]
+            u[i][1] = kTrajectory[i][0]
+        x = np.empty([len(kTrajectory), 3])
+        x[0] = xo
+        for i in range(1, len(t)):
+            resultVal = odeint(
+                self.vehicleModel, x[i-1], [t[i-1], t[i]], args=([u[i][0], u[i][1]],))
+            x[i] = resultVal[1]
 
-            t = [i[1] for i in kTrajectory]
-
-            u = np.empty_like(kTrajectory)
-
-            for i in range(len(kTrajectory)):
-
-                u[i][0] = vTrajectory[i][0]
-                u[i][1] = kTrajectory[i][0]
-
-            x = np.empty([len(kTrajectory), 3])
-            x[0] = xo
-
-            for i in range(1, len(t)):
-
-                # integrate using LSODA
-                resultVal = odeint(
-                    self.vehicleModel, x[i-1], [t[i-1], t[i]], args=([u[i][0], u[i][1]],))
-
-                x[i] = resultVal[1]
-
-            return x
+        return x
 
     def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromStart=False):
         """
+        Takes curvature and velcity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
+
         TODO: increment time
         """
 
@@ -156,7 +182,9 @@ class SmoothPathPlanner:
     def makeTrajectoriesEqualLengthAndMatchZeros(self, kTraj, vTraj):
         """
         From section 2.2 curvature and velocity must be zero at point where velocity changes
-        From predefined turning types the curvature trajectory will always have a zero point when manuever involved reversing direction
+        From predefined turning types the curvature trajectory will always have a zero point when manuever involved reversing direction. 
+
+        This function matches the zero positions and then calls makeTrajectoriesEqualLength on result.
         """
 
         # find zero point in kTraj
@@ -206,6 +234,9 @@ class SmoothPathPlanner:
         return pathTF
 
     def calculateCenterArc(self):
+        """
+        Calculates the positions of the centr of turning for each constant curvature segments. Uses equaltions (10) through (16) from paper.
+        """
         S1 = self.S1
         S2 = self.S2
         S3 = self.S3
