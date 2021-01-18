@@ -5,7 +5,7 @@ from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-
+from PathSegment import PathSegment
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
@@ -128,37 +128,6 @@ class SmoothPathPlanner:
 
         return [v*cos(theta), v*sin(theta), k]
 
-    def integrateTrajectory(self, kTrajectory, vTrajectory, xo):
-        """ 
-        Performs integration on dyanmic model using LSODA from odeint. kTrajetory and vTrajectory must be of equal length.
-
-        Input:
-            kTrajectory: Array of [curvature, time] values for each timestep
-            vTrajectory: Array of [velocity, time] values for each timestep
-            xo: Inital pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
-
-        Output:
-            x: An array of [x,y,theta] poses for each timestep.
-        """
-
-        if (not (len(kTrajectory) == len(vTrajectory))):
-            raise ValueError(
-                "curvature and speed trajectories not same length")
-    
-        t = [i[1] for i in kTrajectory]
-        u = np.empty_like(kTrajectory)
-        for i in range(len(kTrajectory)):
-            u[i][0] = vTrajectory[i][0]
-            u[i][1] = kTrajectory[i][0]
-        x = np.empty([len(kTrajectory), 3])
-        x[0] = xo
-        for i in range(1, len(t)):
-            resultVal = odeint(
-                self.vehicleModel, x[i-1], [t[i-1], t[i]], args=([u[i][0], u[i][1]],))
-            x[i] = resultVal[1]
-
-        return x
-
     def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromStart=False):
         """
         Takes curvature and velcity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
@@ -220,12 +189,17 @@ class SmoothPathPlanner:
             raise ValueError("Path and Point are not of suitable dimension")
 
         index = 0 if relocateStartPoint else -1
+
         pathPoint = path[index]
+
         tf = point - pathPoint
+        
         H = np.array([[cos(tf[2]), -sin(tf[2]), 0],
                       [sin(tf[2]), cos(tf[2]), 0], [0, 0, 1]])
+
         pathHomogenous = np.array(
             [[i[0]-pathPoint[0], i[1]-pathPoint[1], 1] for i in path]).T
+        
         pathTF = np.matmul(H, pathHomogenous).T * [1, 1, 0] + np.array([[0, 0, i[2]] for i in path])
 
         pathTF = (pathTF) + [point[0] - pathTF[-1]
@@ -233,9 +207,26 @@ class SmoothPathPlanner:
 
         return pathTF
 
-    def calculateCenterArc(self):
+    def calculateCenterLine(self):
         """
-        Calculates the positions of the centr of turning for each constant curvature segments. Uses equaltions (10) through (16) from paper.
+        Uses equations (17) through (21) of paper to create center line.
+        """
+        #theta_S2_tS2 = self.S2[]
+
+        #r_k = 
+        return 0
+
+    def calculateConstantArcs(self):
+        """
+        Calculates the positions of the center of turning for each constant curvature segments. Uses equations (10) through (16) from paper.
+
+        Follow the following conventions from paper: 
+            Omega_Ck is the center of turning for the Kth constant curvature segment
+            Omega_Sk_tSk is the instantaneous center of turning for the Kth spiral segment at the beginning of the segment Sk.
+            Omega_Sk_tCk+1 is the  instantaneous center of turning for the Kth spiral segment at the end of the segment Sk. This is also equal to the center of turning for the Ck+1 CC segment.
+
+        Output: 
+            omega_kplus1: center of turning for the center arc.
         """
         S1 = self.S1
         S2 = self.S2
@@ -246,19 +237,21 @@ class SmoothPathPlanner:
         k_C3 = self.k_C3
 
         omega_S2_tC2 = np.array(
-            [S2[-1][0] - (k_C2**-1)*sin(S2[-1][2]), S2[-1][1] + (k_C2**-1)*cos(S2[-1][2])])
+            [S2[-1][0] - (k_C2**-1)*sin(S2[-1][2]), S2[-1][1] + (k_C2**-1)*cos(S2[-1][2])]) #instantaneous center of turning at end of spiral segment S2.
         omega_S2_tS2 = np.array(
-            [S2[0][0] - (k_C1**-1)*sin(S2[0][2]), S2[0][1] + (k_C1**-1)*cos(S2[0][2])])
+            [S2[0][0] - (k_C1**-1)*sin(S2[0][2]), S2[0][1] + (k_C1**-1)*cos(S2[0][2])]) #instantaneous center of turning at beginning of spiral segment S2.
 
         omega_S3_tC3 = np.array(
-            [S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])])
+            [S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])]) #instantaneous center of turning at end of spiral segment S3.
         omega_S3_tS3 = np.array(
-            [S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])])
+            [S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])]) #instantaneous center of turning at end of spiral segment S3.
+
+        #Note here that the spiral segments S2 and S3 have not been placed yet, so these centers can tell us relative displacement, they cannot give us position of the center (C2) CC segment. 
 
         self.omega_k = np.array(
-            [S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])])
+            [S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])]) #center of turning of C1
         self.omega_kplus2 = np.array(
-            [S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])])
+            [S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])]) #center of turning of C3
 
         d1 = np.linalg.norm(self.omega_kplus2 - self.omega_k)
         d2 = np.linalg.norm(omega_S2_tC2 - omega_S2_tS2)
@@ -271,7 +264,7 @@ class SmoothPathPlanner:
 
         signVal = 1 if (k_C2 < 0) else -1
         self.omega_kplus1 = self.omega_k + l1*(self.omega_kplus2 - self.omega_k)/d1 + signVal*l2*np.matmul(
-            np.array([[0, -1], [1, 0]]), (self.omega_kplus2 - self.omega_k))/d1
+            np.array([[0, -1], [1, 0]]), (self.omega_kplus2 - self.omega_k))/d1 #center of turning of C2
 
         return self.omega_kplus1
 
@@ -419,16 +412,22 @@ class SmoothPathPlanner:
 
                 self.S3 = self.integrateTrajectory(K_S3, v_S3, xo)
 
-            ################ generate center arc ################
+            ################ generate center CC segment ################
             if np.abs(self.k_C2) > 0.05:  # center is an arc
-                omega_C2 = self.calculateCenterArc()
+                omega_C2 = self.calculateConstantArcs()
 
-                if omega_C2.all() == False:
+                if omega_C2.all() == False: #if calculating center arc fails
                     return False
 
-            relocatePoint = self.searchC1C2()
-            self.S2 = self.relocatePath(self.S2, relocatePoint)
+                relocatePoint = [self.S1[-1][0], self.S1[-1][1], self.S1[-1][2]]  #relocate the S2 spiral so that it alligns with Omega_k
+                self.S2 = self.relocatePath(self.S2, relocatePoint)
 
+
+            else: #center is a line
+                self.calculateCenterLine()
+
+
+                
             self.path_is_not_feasible = False
 
         # plotting stuff
@@ -447,9 +446,10 @@ class SmoothPathPlanner:
                  [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
                  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        plt.arrow(self.S1[-1][0], self.S1[-1][1], 0.1*cos(self.S1[-1][2]), 0.1*sin(self.S1[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
 
-        plt.xlim([-1, 4])
-        plt.ylim([-1, 4])
+        plt.xlim([-0.5, 0.5])
+        plt.ylim([-0.5, 0.5])
         plt.savefig("trajectory.png")
 
         return self.path
