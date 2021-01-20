@@ -169,22 +169,30 @@ class SmoothPathPlanner:
         S3 = self.S3.poses
         S4 = self.S4.poses
         k_C1 = self.k_C1
-
         k_C3 = self.k_C3
+
+        omega_S2_tS2 = np.array(
+            [S2[0][0] - (k_C1**-1)*sin(S2[0][2]), S2[0][1] + (k_C1**-1)*cos(S2[0][2])]) #instantaneous center of turning at beginning of spiral segment S2.
+
+        omega_S3_tC3 = np.array(
+            [S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])]) #instantaneous center of turning at end of spiral segment S3.
+
+        #Note here that the spiral segments S2 and S3 have not been placed yet, so these centers can tell us relative displacement, they cannot give us position of the center (C2) CC segment. 
+
         omega_k = np.array(
             [S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])]) #center of turning of C1
         omega_kplus2 = np.array(
             [S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])]) #center of turning of C3
 
-        rk = cos(S1[-1][2]) * (omega_k[1] - S1[-1][1]) - sin(S1[-1][2]) * (omega_k[0] - S1[-1][0])
+        rk = cos(S2[-1][2]) * (omega_S2_tS2[1] - S2[-1][1]) - sin(S2[-1][2]) * (omega_S2_tS2[0] - S2[-1][0])
 
-        rkplus1 = cos(S4[0][2]) * (omega_kplus2[1] - S4[0][1]) - sin(S4[0][2]) * (omega_kplus2[0] - S4[0][0])
+        rkplus1 = cos(S3[0][2]) * (omega_S3_tC3[1] - S3[0][1]) - sin(S3[0][2]) * (omega_S3_tC3[0] - S3[0][0])
 
         d = np.linalg.norm(omega_kplus2 - omega_k)
 
         w = np.arcsin((rkplus1 - rk)/d)
 
-        return np.angle(omega_kplus2 - omega_k) - w
+        return np.angle(omega_kplus2 - omega_k) - w #phi
 
     def calculateConstantArcs(self):
         """
@@ -214,7 +222,7 @@ class SmoothPathPlanner:
         omega_S3_tC3 = np.array(
             [S3[-1][0] - (k_C3**-1)*sin(S3[-1][2]), S3[-1][1] + (k_C3**-1)*cos(S3[-1][2])]) #instantaneous center of turning at end of spiral segment S3.
         omega_S3_tS3 = np.array(
-            [S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])]) #instantaneous center of turning at end of spiral segment S3.
+            [S3[0][0] - (k_C2**-1)*sin(S3[0][2]), S3[0][1] + (k_C2**-1)*cos(S3[0][2])]) #instantaneous center of turning at start of spiral segment S3.
 
         #Note here that the spiral segments S2 and S3 have not been placed yet, so these centers can tell us relative displacement, they cannot give us position of the center (C2) CC segment. 
 
@@ -338,12 +346,15 @@ class SmoothPathPlanner:
                 if omega_C2.all() == False: #if calculating center arc fails
                     return False
 
-                self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
+                # calculate rotation angle
+                omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] - self.k_C2**-1*cos(self.S2.poses[-1][2])])
+                r = np.linalg.norm(np.array([self.S2.poses[-1][0] + omega_S2_tC2[0] ,self.S2.poses[-1][1] +  omega_S2_tC2[1]])) #instantaneous center of turning of end of spiral segment S2
+                rotAngle = np.arccos(self.omega_kplus1[0]/r) np.arccos(omega_S2_tC2[0]/r)
 
-
+                self.S2.rotateAboutPoint(self.omega_k[0], self.omega[1], rotAngle)
 
             else: #center is a line
-                self.calculateCenterLine()
+                self.phi_C2 = self.calculateCenterLine()
 
             
 
