@@ -41,7 +41,31 @@ class SpiralSegment:
         TxH = np.matmul(T,H)
 
         rotAndTranslatedPoints = np.matmul(TxH,homogenousCoords)
-        finalPath = rotAndTranslatedPoints + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [thetaRotate]])
+
+        #next line does a bunch of broadcasting to strip the ones from homogenous coords and add back the orientation data
+        finalPath = rotAndTranslatedPoints * np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [thetaRotate]])
+
+        self.poses = finalPath.T
+    
+    def rotateAboutPoint(self, a, b, theta):
+        """ 
+        Rotates the path about a point [a,b] by theta rad.
+
+        Input: 
+            
+            a: x position of center of rotation (m)
+            b: y position of center of rotation (m)
+            theta: orientation of start or end pose (rad)
+         """
+
+        homogenousCoords = self.poses.T * np.array([[1], [1], [0]]) + np.array([[0], [0], [1]])
+
+        H = np.array([[cos(theta), -1*sin(theta), -1*a*cos(theta) + b*sin(theta) + a],
+                      [sin(theta), cos(theta), -1*a*sin(theta) - b*cos(theta) + b], 
+                      [0, 0, 1]])
+
+        rotatedPoints = np.matmul(H,homogenousCoords)
+        finalPath = rotatedPoints + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [theta]])
 
         self.poses = finalPath.T
 
@@ -94,31 +118,3 @@ class SpiralSegment:
         theta = x[2]
 
         return [v*cos(theta), v*sin(theta), k]
-
-    def relocatePath(self, path, point, relocateStartPoint=True):
-        """Use Homogenous Transform to relocate a path to a point
-            TODO: optimize function and use Homogenous TF efficiently
-            TODO: get orienttion values
-        """
-
-        if not (len(path[1]) == len(point)):
-            raise ValueError("Path and Point are not of suitable dimension")
-
-        index = 0 if relocateStartPoint else -1
-
-        pathPoint = path[index]
-
-        tf = point - pathPoint
-        
-        H = np.array([[cos(tf[2]), -sin(tf[2]), 0],
-                      [sin(tf[2]), cos(tf[2]), 0], [0, 0, 1]])
-
-        pathHomogenous = np.array(
-            [[i[0]-pathPoint[0], i[1]-pathPoint[1], 1] for i in path]).T
-        
-        pathTF = np.matmul(H, pathHomogenous).T * [1, 1, 0] + np.array([[0, 0, i[2]] for i in path])
-
-        pathTF = (pathTF) + [point[0] - pathTF[-1]
-                             [0], point[1] - pathTF[-1][1],  tf[2]]
-
-        return pathTF

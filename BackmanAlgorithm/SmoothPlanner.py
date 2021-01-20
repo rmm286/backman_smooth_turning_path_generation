@@ -349,9 +349,15 @@ class SmoothPathPlanner:
         plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
                  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
+        
+        for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
+            plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+        
+        for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
+            plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
-        plt.xlim([-3, 2])
-        plt.ylim([-3, 2])
+        plt.xlim([-0.5, 2])
+        plt.ylim([-0.5, 2])
         plt.savefig("trajectory.png")
 
         return self.path
