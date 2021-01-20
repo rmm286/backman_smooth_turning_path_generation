@@ -5,7 +5,7 @@ from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from SpiralSegment import SpiralSegment
+from PathSegment import SpiralSegment, CCSegment
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
@@ -345,22 +345,27 @@ class SmoothPathPlanner:
 
                 if omega_C2.all() == False: #if calculating center arc fails
                     return False
+                
+                ################ place S2 and S3 segments ################
+                self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
+                omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] + self.k_C2**-1*cos(self.S2.poses[-1][2])])
+                r = np.linalg.norm(np.array([self.S2.poses[-1][0] + omega_S2_tC2[0] ,self.S2.poses[-1][1] +  omega_S2_tC2[1]]))
+                rotAngle = r*(np.arccos(self.omega_kplus1[0]/r) - np.arccos(omega_S2_tC2[0]/r))
+                self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
 
-                # calculate rotation angle
-                omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] - self.k_C2**-1*cos(self.S2.poses[-1][2])])
-                r = np.linalg.norm(np.array([self.S2.poses[-1][0] + omega_S2_tC2[0] ,self.S2.poses[-1][1] +  omega_S2_tC2[1]])) #instantaneous center of turning of end of spiral segment S2
-                rotAngle = np.arccos(self.omega_kplus1[0]/r) np.arccos(omega_S2_tC2[0]/r)
+                self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
+                omega_S3_tS3 = np.array([self.S3.poses[0][0] - self.k_C2**-1 *sin(self.S3.poses[0][2]), self.S3.poses[0][1] + self.k_C2**-1*cos(self.S3.poses[0][2])])
+                r = np.linalg.norm(np.array([self.S3.poses[0][0] + omega_S3_tS3[0] ,self.S3.poses[0][1] +  omega_S3_tS3[1]]))
+                rotAngle = -r*(np.arccos(self.omega_kplus1[0]/r) - np.arccos(omega_S2_tC2[0]/r))
+                self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
-                self.S2.rotateAboutPoint(self.omega_k[0], self.omega[1], rotAngle)
+
+
 
             else: #center is a line
                 self.phi_C2 = self.calculateCenterLine()
 
-            
 
-
-
-                
             self.path_is_not_feasible = False
 
         # plotting stuff
@@ -381,11 +386,11 @@ class SmoothPathPlanner:
                  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
         
-        for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
-            plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+        # for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
+        #     plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
         
-        for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
-            plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+        # for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
+        #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
         plt.xlim([-0.5, 2])
         plt.ylim([-0.5, 2])
@@ -398,7 +403,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(1.5, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(1.4, 0, -0.5*np.pi, 1, 0)
     turningRadius = 1.0  # m
     dT = 0.005
 

@@ -5,10 +5,7 @@ import scipy
 from scipy import integrate
 from scipy.integrate import odeint
 
-class SpiralSegment:
-
-    def __init__(self, kTrajectory, vTrajectory, xo):
-        self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo)
+class PathSegment: 
 
     def placePath(self, x, y, theta, wrtStart=True):
         """ 
@@ -49,7 +46,7 @@ class SpiralSegment:
     
     def rotateAboutPoint(self, a, b, theta):
         """ 
-        Rotates the path about a point [a,b] by theta rad.
+        Rotates the path about a point [a,b] by theta radians.
 
         Input: 
             
@@ -65,10 +62,15 @@ class SpiralSegment:
                       [0, 0, 1]])
 
         rotatedPoints = np.matmul(H,homogenousCoords)
-        finalPath = rotatedPoints + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [theta]])
+        finalPath = rotatedPoints* np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [theta]])
 
         self.poses = finalPath.T
 
+class SpiralSegment(PathSegment):
+
+    def __init__(self, kTrajectory, vTrajectory, xo):
+        self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo)
+    
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo):
         """ 
         Performs integration on dyanmic model using LSODA from odeint. kTrajetory and vTrajectory must be of equal length.
@@ -118,3 +120,8 @@ class SpiralSegment:
         theta = x[2]
 
         return [v*cos(theta), v*sin(theta), k]
+
+class CCSegment(PathSegment):
+
+    def __init__(self, curvature, start, end):
+        self.poses = np.array([[0],[0],[0]])
