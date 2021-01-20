@@ -164,10 +164,27 @@ class SmoothPathPlanner:
         """
         Uses equations (17) through (21) of paper to create center line.
         """
-        #theta_S2_tS2 = self.S2[]
+        S1 = self.S1.poses
+        S2 = self.S2.poses
+        S3 = self.S3.poses
+        S4 = self.S4.poses
+        k_C1 = self.k_C1
 
-        #r_k = 
-        return 0
+        k_C3 = self.k_C3
+        omega_k = np.array(
+            [S1[-1][0] - (k_C1**-1)*sin(S1[-1][2]), S1[-1][1] + (k_C1**-1)*cos(S1[-1][2])]) #center of turning of C1
+        omega_kplus2 = np.array(
+            [S4[0][0] - (k_C3**-1)*sin(S4[0][2]), S4[0][1] + (k_C3**-1)*cos(S4[0][2])]) #center of turning of C3
+
+        rk = cos(S1[-1][2]) * (omega_k[1] - S1[-1][1]) - sin(S1[-1][2]) * (omega_k[0] - S1[-1][0])
+
+        rkplus1 = cos(S4[0][2]) * (omega_kplus2[1] - S4[0][1]) - sin(S4[0][2]) * (omega_kplus2[0] - S4[0][0])
+
+        d = np.linalg.norm(omega_kplus2 - omega_k)
+
+        w = np.arcsin((rkplus1 - rk)/d)
+
+        return np.angle(omega_kplus2 - omega_k) - w
 
     def calculateConstantArcs(self):
         """
@@ -309,8 +326,6 @@ class SmoothPathPlanner:
                     extend_v_S3 = np.array([[v_S4[-1][0], 0]
                                             for i in range(len(K_S3) - len_v_S3)])
                     v_S3 = np.append(v_S3, extend_v_S3, axis=0)
-                    # print(len(v_S2))
-                    # print(len(K_S2))
                 else:
                     v_S3 = np.array([[v_C3, 0] for i in range(len(K_S3))])
 
@@ -325,8 +340,13 @@ class SmoothPathPlanner:
 
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
 
+
+
             else: #center is a line
                 self.calculateCenterLine()
+
+            
+
 
 
                 
