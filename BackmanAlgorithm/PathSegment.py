@@ -1,8 +1,6 @@
 import numpy as np
 from numpy import sin, cos, tan
 import matplotlib.pyplot as plt
-import scipy
-from scipy import integrate
 from scipy.integrate import odeint
 
 class PathSegment: 
@@ -65,6 +63,27 @@ class PathSegment:
         finalPath = rotatedPoints* np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [theta]])
 
         self.poses = finalPath.T
+    
+    def pathIntersectsWith(self, otherPath):
+        """
+        Function returns true if the two paths intersect. This is implemented as a simple bounding box, since paths shouldn't really get very close to each other.
+
+        Output:
+            intersects: True if paths intersect (bool)
+        
+        """
+        leftSideBox1 = np.amin(np.array([i[0] for i in self.poses]))
+        rightSideBox1 = np.amax(np.array([i[0] for i in self.poses]))
+        leftSideBox2 = np.amin(np.array([i[0] for i in otherPath.poses]))
+        rightSideBox2 = np.amax(np.array([i[0] for i in otherPath.poses]))
+        bottomSideBox1 = np.amin(np.array([i[1] for i in self.poses]))
+        topSideBox1 = np.amax(np.array([i[1] for i in self.poses]))
+        bottomSideBox2 = np.amin(np.array([i[1] for i in otherPath.poses]))
+        topSideBox2 = np.amax(np.array([i[1] for i in otherPath.poses]))
+
+        return not (rightSideBox1 < leftSideBox2 or leftSideBox1 > rightSideBox2 or topSideBox1 < bottomSideBox2 or bottomSideBox1 > topSideBox2)
+
+            
 
 class SpiralSegment(PathSegment):
 
@@ -123,5 +142,6 @@ class SpiralSegment(PathSegment):
 
 class CCSegment(PathSegment):
 
-    def __init__(self, curvature, start, end):
-        self.poses = np.array([[0],[0],[0]])
+    def __init__(self, curvature, speed, start, end):
+        if np.abs(curvature) > 0: #arc segment
+            a = 0
