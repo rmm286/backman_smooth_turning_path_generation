@@ -112,20 +112,19 @@ class SmoothPathPlanner:
     def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromStart=False):
         """
         Takes curvature and velcity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
-
-        TODO: increment time
         """
 
         if (len(kTraj) < len(vTraj)) and not fromStart:  # cut from end of vTraj
             vTraj = vTraj[0:len(kTraj)]
         elif (len(kTraj) < len(vTraj)) and fromStart:  # cut from start of vTraj
             vTraj = vTraj[len(vTraj) - len(kTraj):len(vTraj)]
-        elif (len(kTraj) > len(vTraj)) and not fromStart:
+        elif (len(kTraj) > len(vTraj)) and not fromStart: # add to end of vTraj
             vTraj = np.append(vTraj, np.array(
-                [vTraj[-1] for i in range((len(kTraj) - len(vTraj)))]), axis=0)
-        elif (len(kTraj) > len(vTraj)) and fromStart:
-            vTraj = np.append(
-                np.array([vTraj[0] for i in range(len(kTraj) - len(vTraj))]), vTraj, axis=0)
+                [[vTraj[-1][0], kTraj[i + len(vTraj)][1]]  for i in range((len(kTraj) - len(vTraj)))]), axis=0)
+        elif (len(kTraj) > len(vTraj)) and fromStart: # add to start of vTraj
+            extension = np.array([[vTraj[0][0], kTraj[i][1]]for i in range(len(kTraj) - len(vTraj))])
+            vTrajAdjustedTimes = np.array([[vTraj[i- len(vTraj)][0], kTraj[i + len(vTraj)-1][1]] for i in range(len(vTraj))])
+            vTraj = np.append(extension,vTrajAdjustedTimes, axis = 0)
 
         return {'kTraj': kTraj, 'vTraj': vTraj}
 
@@ -145,17 +144,17 @@ class SmoothPathPlanner:
 
         kZeroTime = kTraj[kZeroIndex][1]
 
-        if kZeroIndex < vZeroIndex:
+        if kZeroIndex < vZeroIndex: #extend kTraj
             diff = vZeroIndex - kZeroIndex
             kTrajExtension = np.array(
-                [[0, kTraj[kZeroIndex] + (i+1)*self.dT] for i in range(diff)])
+                [[0, kTraj[kZeroIndex][1] + (i+1)*self.dT] for i in range(diff)])
             kTraj = np.insert(kTraj, kZeroIndex, kTrajExtension, axis=0)
 
             return self.makeTrajectoriesEqualLength(kTraj, vTraj)
         else:
             diff = kZeroIndex - vZeroIndex
             vTrajExtension = np.array(
-                [[0, vTraj[kZeroIndex] + (i+1)*self.dT] for i in range(diff)])
+                [[0, vTraj[kZeroIndex][1] + (i+1)*self.dT] for i in range(diff)])
             vTraj = np.insert(vTraj, vZeroIndex, vTrajExtension, axis=0)
 
             return self.makeTrajectoriesEqualLength(kTraj, vTraj)
@@ -239,7 +238,7 @@ class SmoothPathPlanner:
 
         l1 = (d2**2 - d3**2 + d1**2)/(2*d1)
         if(l1 > d2):
-            return False
+            raise Exception
         l2 = np.sqrt(d2**2 - l1**2)
 
         signVal = 1 if (k_C2 < 0) else -1
@@ -262,15 +261,17 @@ class SmoothPathPlanner:
                 self.initialState.v, self.headlandSpeed, 0)
 
             trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
+
             if len(v_S1) > len(trajectories['vTraj']):
                 cut_v_S1 = True
-                cut_v_S1_index = len(trajectories['vTraj'])
+                cut_v_S1_index = len(trajectories['vTraj'])-1
             else:
                 cut_v_S1 = False
+                v_C1 = trajectories['vTraj'][-1][0]
             xo = [self.initialState.x, self.initialState.y,
                   self.initialState.theta]
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo)
-            v_C1 = trajectories['vTraj'][-1][0]
+            
 
             ################ generate last connecting spiral ################
             K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4, 0)
@@ -283,8 +284,7 @@ class SmoothPathPlanner:
                 cut_v_S4_index = len(v_S4) - len(trajectories['vTraj'])
             else:
                 cut_v_S4 = False
-
-            v_C3 = trajectories['vTraj'][0][0]  # first value of v_s4
+                v_C3 = trajectories['vTraj'][0][0]
 
             xo = [0, 0, 0]
             self.S4 = SpiralSegment(
@@ -306,13 +306,12 @@ class SmoothPathPlanner:
                     trajectories['kTraj'], trajectories['vTraj'], xo)
             else:
                 if cut_v_S1:
-                    v_S2 = v_S1[cut_v_S1_index:-1]
-                    len_v_S2 = len(v_S2)
-                    extend_v_S2 = np.array([[v_S1[-1][0], 0]
-                                            for i in range(len(K_S2) - len_v_S2)])
+                    v_S2 = v_S1[cut_v_S1_index+1:len(v_S2)]
+                    extend_v_S2 = np.array([[v_S1[-1][0], K_S2[i + len(v_S2)][1]]
+                                            for i in range(len(K_S2) - len(v_S2))])
                     v_S2 = np.append(v_S2, extend_v_S2, axis=0)
                 else:
-                    v_S2 = np.array([[v_C1, 0] for i in range(len(K_S2))])
+                    v_S2 = np.array([[v_C1, K_S2[i][1]] for i in range(len(K_S2))])
 
                 self.S2 = SpiralSegment(K_S2, v_S2, xo)
 
@@ -331,42 +330,50 @@ class SmoothPathPlanner:
             else:
                 if cut_v_S4:
                     v_S3 = v_S4[0:cut_v_S4_index]
-                    len_v_S3 = len(v_S3)
-                    extend_v_S3 = np.array([[v_S4[-1][0], 0]
-                                            for i in range(len(K_S3) - len_v_S3)])
+                    extend_v_S3 = np.array([[v_S4[-1][0], K_S3[i+len(v_S3)][1]]
+                                            for i in range(len(K_S3) - len(v_S3))])
                     v_S3 = np.append(v_S3, extend_v_S3, axis=0)
                 else:
-                    v_S3 = np.array([[v_C3, 0] for i in range(len(K_S3))])
+                    v_S3 = np.array([[v_C3, K_S3[i][1]] for i in range(len(K_S3))])
 
                 self.S3 = SpiralSegment(K_S3, v_S3, xo)
 
             ################ generate center CC segment ################
             if np.abs(self.k_C2) > 0.005:  # center is an arc
-                omega_C2 = self.calculateConstantArcs()
-
-                if omega_C2.all() == False: #if calculating center arc fails
-                    return False
+                
+                try:
+                    self.calculateConstantArcs()
+                except: #can't use this turning type
+                    break 
                 
                 ################ place S2 and S3 segments ################
                 # TODO: fix the issue with r being from origin if it causes issues
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
+
                 omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] + self.k_C2**-1*cos(self.S2.poses[-1][2])])
-                r = np.linalg.norm(np.array([self.S2.poses[-1][0] + omega_S2_tC2[0]-self.omega_k[0],self.S2.poses[-1][1] +  omega_S2_tC2[1]-self.omega_k[1]]))
-                rotAngle = r*(np.arccos(self.omega_kplus1[0]/r) - np.arccos(omega_S2_tC2[0]/r))
+
+                r = np.linalg.norm(omega_S2_tC2 - self.omega_k)
+
+                rotAngle = np.arccos(self.omega_kplus1[0]/r) - np.arccos((omega_S2_tC2[0] - self.omega_kplus1[0]) /r)
+                
                 self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
 
+
+
+
                 self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
+                
                 omega_S3_tS3 = np.array([self.S3.poses[0][0] - self.k_C2**-1 *sin(self.S3.poses[0][2]), self.S3.poses[0][1] + self.k_C2**-1*cos(self.S3.poses[0][2])])
+                
                 r = np.linalg.norm(np.array([self.S3.poses[0][0] + omega_S3_tS3[0] ,self.S3.poses[0][1] +  omega_S3_tS3[1]]))
+                
                 rotAngle = -r*(np.arccos(self.omega_kplus1[0]/r) - np.arccos(omega_S2_tC2[0]/r))
+                
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
                 ################ make C2 segment ################
 
                 #self.C2 = CCSegment(self.k_C2, self.S2[-1], self.S3[0])
-
-
-
 
             else: #center is a line
 
@@ -381,16 +388,16 @@ class SmoothPathPlanner:
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
                 #check if they intersect
-                print(self.S2.pathIntersectsWith(self.S3))
-
+                if self.S2.pathIntersectsWith(self.S3):
+                    self.k_C2 = self.k_C2 + self.k_C4*0.1 #increases or decreases the center curvature toward k_end
+                    # TODO: implemetnation for RSL LSR cases?
+                    continue
+                
                 ################ make C2 segment ################
 
 
-
-
-
-
-
+            ################ generate C1 and C3 ################
+      
 
 
             self.path_is_not_feasible = False
@@ -400,6 +407,7 @@ class SmoothPathPlanner:
         plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
         plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
         plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
+        #plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
 
         plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
         # plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
@@ -407,8 +415,8 @@ class SmoothPathPlanner:
 
         plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
                   [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-        # plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
-        #          [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                 [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
                   [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         # plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
@@ -419,8 +427,8 @@ class SmoothPathPlanner:
         # for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
         #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
-        plt.xlim([-0.5, 6])
-        plt.ylim([-0.5, 5])
+        plt.xlim([-2.5, 5])
+        plt.ylim([-2.5, 5])
         plt.savefig("trajectory.png")
 
         return self.path
@@ -430,7 +438,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(5, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(1.75, 0, -0.5*np.pi, 1, 0)
     turningRadius = 1.0  # m
     dT = 0.005
 
@@ -460,12 +468,12 @@ def main():
     # RLR = [KMin, KMax, KMin, False]
     # LSR = [KMax, 0, KMin, False]
     # RSL = [KMin, 0, KMax, False]
-    # R1L1R = [KMin, KMax, KMin, True]
+    R1L1R = [kMin, kMax, kMin, True]
     # L1R1L = [KMax, KMin, KMax, True]
 
     planSmoothInst = SmoothPathPlanner()
 
-    pathType = RSR
+    pathType = R1L1R
     planSmoothInst.setConstraints(
         kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setNominalCurvatures(
