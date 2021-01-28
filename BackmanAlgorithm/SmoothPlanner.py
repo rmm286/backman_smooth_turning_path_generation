@@ -5,7 +5,7 @@ from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from PathSegment import SpiralSegment, CCSegment
+from PathSegment import SpiralSegment, CCSegment, LineSegment
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
@@ -347,33 +347,28 @@ class SmoothPathPlanner:
                     break 
                 
                 ################ place S2 and S3 segments ################
-                # TODO: fix the issue with r being from origin if it causes issues
+                
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
 
                 omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] + self.k_C2**-1*cos(self.S2.poses[-1][2])])
 
                 r = np.linalg.norm(omega_S2_tC2 - self.omega_k)
 
-                rotAngle = np.arccos(self.omega_kplus1[0]/r) - np.arccos((omega_S2_tC2[0] - self.omega_kplus1[0]) /r)
+                rotAngle = np.arccos((self.omega_kplus1[0] - self.omega_k[0])/r) - np.arccos((omega_S2_tC2[0] - self.omega_k[0]) /r)
                 
                 self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
-
-
-
 
                 self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
                 
                 omega_S3_tS3 = np.array([self.S3.poses[0][0] - self.k_C2**-1 *sin(self.S3.poses[0][2]), self.S3.poses[0][1] + self.k_C2**-1*cos(self.S3.poses[0][2])])
                 
-                r = np.linalg.norm(np.array([self.S3.poses[0][0] + omega_S3_tS3[0] ,self.S3.poses[0][1] +  omega_S3_tS3[1]]))
+                r = np.linalg.norm(omega_S3_tS3 - self.omega_kplus2)
                 
-                rotAngle = -r*(np.arccos(self.omega_kplus1[0]/r) - np.arccos(omega_S2_tC2[0]/r))
+                rotAngle =  np.arccos((self.omega_kplus1[0] - self.omega_kplus2[0])/r) - np.arccos((omega_S3_tS3[0]- self.omega_kplus2[0])/r)
                 
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
-                ################ make C2 segment ################
-
-                #self.C2 = CCSegment(self.k_C2, self.S2[-1], self.S3[0])
+                
 
             else: #center is a line
 
@@ -395,9 +390,12 @@ class SmoothPathPlanner:
                 
                 ################ make C2 segment ################
 
-
             ################ generate C1 and C3 ################
-      
+            v_C1 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
+            self.C1 = CCSegment(self.k_C1, v_C1, self.S1.poses[-1], self.S2.poses[0], self.omega_k, self.dT)
+
+            v_C3 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
+            self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
 
 
             self.path_is_not_feasible = False
@@ -407,16 +405,21 @@ class SmoothPathPlanner:
         plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
         plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
         plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
-        #plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
+        plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
+        plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
 
         plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
-        # plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
+        if hasattr(self,'omega_kplus1'):
+            plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
+
         plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
 
         plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
                   [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-        plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
-                 [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        if hasattr(self,'omega_kplus1'):
+            plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                     [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+                     
         plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
                   [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         # plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
@@ -427,8 +430,8 @@ class SmoothPathPlanner:
         # for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
         #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
-        plt.xlim([-2.5, 5])
-        plt.ylim([-2.5, 5])
+        plt.xlim([-1, 2.5])
+        plt.ylim([-1, 2.5])
         plt.savefig("trajectory.png")
 
         return self.path
@@ -438,11 +441,14 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(1.75, 0, -0.5*np.pi, 1, 0)
-    turningRadius = 1.0  # m
+    finalState = SmoothPathState(1, 0, -0.5*np.pi, 1, 0)
+    L_w = 1.0
+    gamma_max = np.pi/4.0
+    
+    turningRadius = L_w/tan(gamma_max)  # =L_w/tan(gamma_max)
     dT = 0.005
 
-    kMax = 1/float(turningRadius)
+    kMax = 1/turningRadius
     kMin = -kMax
     kDotMax = 5.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
@@ -473,7 +479,7 @@ def main():
 
     planSmoothInst = SmoothPathPlanner()
 
-    pathType = R1L1R
+    pathType = LRL
     planSmoothInst.setConstraints(
         kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setNominalCurvatures(

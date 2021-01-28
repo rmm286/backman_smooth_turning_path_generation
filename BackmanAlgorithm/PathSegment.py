@@ -7,7 +7,7 @@ class PathSegment:
 
     def placePath(self, x, y, theta, wrtStart=True):
         """ 
-        Places the path at a point 
+        Places a path so that either the first or last element of the path is equal to the given [x,y,th].
 
         Input: 
             theta: orientation of start or end pose(rad)
@@ -37,7 +37,7 @@ class PathSegment:
 
         rotAndTranslatedPoints = np.matmul(TxH,homogenousCoords)
 
-        #next line does a bunch of broadcasting to strip the ones from homogenous coords and add back the orientation data
+        #next line does a bunch of broadcasting to strip the ones from homogenous coords and add back the orientation values
         finalPath = rotAndTranslatedPoints * np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [thetaRotate]])
 
         self.poses = finalPath.T
@@ -89,6 +89,7 @@ class SpiralSegment(PathSegment):
 
     def __init__(self, kTrajectory, vTrajectory, xo):
         self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo)
+        self.controls = np.array([[kTrajectory[i][0], vTrajectory[i][0]] for i in range(len(kTrajectory))]) #TODO: optimize with array operations
     
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo):
         """ 
@@ -138,10 +139,59 @@ class SpiralSegment(PathSegment):
         k = u[1]
         theta = x[2]
 
-        return [v*cos(theta), v*sin(theta), k]
+        return [v*cos(theta), v*sin(theta), k*v]
 
 class CCSegment(PathSegment):
 
-    def __init__(self, curvature, speed, start, end):
-        if np.abs(curvature) > 0: #arc segment
-            a = 0
+    def __init__(self, curvature, vTraj, start, end, center, dT):
+        """
+        Generates a constant curvature segment from start to end coordinates, with given curvature, cetner of rotation and speed profile. 
+
+        Input: 
+            curvaure: curvature of constant arc (float)
+            vTraj: velocity profile of constant arc segment (Nx2 array of floats)
+            start: SE2 position of start point (1x2 array of floats)
+            end: SE2 position of end point (1x2 array of floats)
+            center: R2 position of center of turning (1x2 of floats)
+            dT: timestep, must be timestep of overall planning profile (float)
+        """
+        
+        ang1 = np.arctan2(start[1]-center[1],start[0]-center[0])
+        ang2 = np.arctan2(end[1]-center[1], end[0]-center[0])
+        r = np.linalg.norm(start[0:2]-center)
+
+        if(curvature > 0 and ang2 < ang1):
+            ang2 = ang2 + 2*np.pi
+        
+        if(curvature < 0 and ang2 > ang1):
+            ang2 = ang2 - 2*np.pi
+
+        arcLen = r*(ang2-ang1)
+        maxTimeToTraverse = arcLen/np.amin(vTraj.T[0])
+        maxStepsToTraverse = int(maxTimeToTraverse/dT)
+
+        self.poses = np.zeros([maxStepsToTraverse+1,3])
+        self.controls = np.zeros([maxStepsToTraverse+1,2])
+
+        ang = ang1
+        i = 0 #counter
+        v_index = i
+
+        while (ang < ang2):
+            w = abs(vTraj[v_index][0])/r
+            ang = ang + np.sign(curvature)*w*dT
+            
+            self.poses[i] = np.array([center[0] + r*cos(ang), center[1] + r*sin(ang), ang + np.sign(curvature)*np.pi/2.0])
+            self.controls[i] = np.array([vTraj[v_index][0], curvature])
+            
+            i = i + 1
+            if v_index < len(vTraj) - 1:
+                v_index = v_index + 1
+
+        self.poses = self.poses[0:i] #trim excess
+
+class LineSegment(PathSegment):
+
+    def __init__(self, speed, start, end, phi, dT):
+        
+        a = 0
