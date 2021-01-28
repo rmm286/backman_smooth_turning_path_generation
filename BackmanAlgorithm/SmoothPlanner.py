@@ -349,26 +349,19 @@ class SmoothPathPlanner:
                 ################ place S2 and S3 segments ################
                 
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
-
                 omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] + self.k_C2**-1*cos(self.S2.poses[-1][2])])
-
                 r = np.linalg.norm(omega_S2_tC2 - self.omega_k)
-
                 rotAngle = np.arccos((self.omega_kplus1[0] - self.omega_k[0])/r) - np.arccos((omega_S2_tC2[0] - self.omega_k[0]) /r)
-                
                 self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
-
                 self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
-                
                 omega_S3_tS3 = np.array([self.S3.poses[0][0] - self.k_C2**-1 *sin(self.S3.poses[0][2]), self.S3.poses[0][1] + self.k_C2**-1*cos(self.S3.poses[0][2])])
-                
                 r = np.linalg.norm(omega_S3_tS3 - self.omega_kplus2)
-                
                 rotAngle =  np.arccos((self.omega_kplus1[0] - self.omega_kplus2[0])/r) - np.arccos((omega_S3_tS3[0]- self.omega_kplus2[0])/r)
-                
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
-                
+                ################ make C2 segment ################
+                v_C2 = np.array([[self.headlandSpeed, self.dT * i] for i in range(200)])
+                self.C2 = CCSegment(self.k_C2, v_C2, self.S2.poses[-1], self.S3.poses[0], self.omega_kplus1, self.dT)
 
             else: #center is a line
 
@@ -406,6 +399,7 @@ class SmoothPathPlanner:
         plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
         plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
         plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
+        plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
         plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
 
         plt.plot(self.omega_k[0], self.omega_k[1], 'b^')

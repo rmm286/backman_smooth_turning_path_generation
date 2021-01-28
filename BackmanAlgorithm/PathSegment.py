@@ -145,10 +145,10 @@ class CCSegment(PathSegment):
 
     def __init__(self, curvature, vTraj, start, end, center, dT):
         """
-        Generates a constant curvature segment from start to end coordinates, with given curvature, cetner of rotation and speed profile. 
+        Generates a constant curvature segment from start to end coordinates, with given curvature, center of rotation and speed profile. 
 
         Input: 
-            curvaure: curvature of constant arc (float)
+            curvature: curvature of constant arc (float)
             vTraj: velocity profile of constant arc segment (Nx2 array of floats)
             start: SE2 position of start point (1x2 array of floats)
             end: SE2 position of end point (1x2 array of floats)
@@ -166,7 +166,7 @@ class CCSegment(PathSegment):
         if(curvature < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
 
-        arcLen = r*(ang2-ang1)
+        arcLen = r*np.abs(ang2-ang1)
         maxTimeToTraverse = arcLen/np.amin(vTraj.T[0])
         maxStepsToTraverse = int(maxTimeToTraverse/dT)
 
@@ -177,7 +177,7 @@ class CCSegment(PathSegment):
         i = 0 #counter
         v_index = i
 
-        while (ang < ang2):
+        while np.sign(curvature)*(ang - ang2) <= 0:
             w = abs(vTraj[v_index][0])/r
             ang = ang + np.sign(curvature)*w*dT
             
@@ -193,5 +193,15 @@ class CCSegment(PathSegment):
 class LineSegment(PathSegment):
 
     def __init__(self, speed, start, end, phi, dT):
+        """
+        Generates a line segment from start to end coordinates, with given direction, and speed profile. 
+
+        Input: 
+            curvaure: curvature of constant arc (float)
+            vTraj: velocity profile of constant arc segment (Nx2 array of floats)
+            start: SE2 position of start point (1x2 array of floats)
+            end: SE2 position of end point (1x2 array of floats)
+            phi: direction angle wrt to horizontal axis
+            dT: timestep, must be timestep of overall planning profile (float)
+        """
         
-        a = 0
