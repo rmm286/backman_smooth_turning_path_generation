@@ -168,10 +168,10 @@ class CCSegment(PathSegment):
 
         arcLen = r*np.abs(ang2-ang1)
         maxTimeToTraverse = arcLen/np.amin(vTraj.T[0])
-        maxStepsToTraverse = int(maxTimeToTraverse/dT)
+        maxStepsToTraverse = int(maxTimeToTraverse/dT) +1
 
         self.poses = np.zeros([maxStepsToTraverse+1,3])
-        self.controls = np.zeros([maxStepsToTraverse+1,2])
+        self.controls = np.zeros([maxStepsToTraverse,2])
 
         ang = ang1
         i = 0 #counter
@@ -189,19 +189,48 @@ class CCSegment(PathSegment):
                 v_index = v_index + 1
 
         self.poses = self.poses[0:i] #trim excess
+        self.controls = self.controls[0:i] #trim excess
 
 class LineSegment(PathSegment):
 
-    def __init__(self, speed, start, end, phi, dT):
+    def __init__(self, vTraj, start, end, dT):
         """
         Generates a line segment from start to end coordinates, with given direction, and speed profile. 
 
         Input: 
-            curvaure: curvature of constant arc (float)
             vTraj: velocity profile of constant arc segment (Nx2 array of floats)
             start: SE2 position of start point (1x2 array of floats)
             end: SE2 position of end point (1x2 array of floats)
-            phi: direction angle wrt to horizontal axis
             dT: timestep, must be timestep of overall planning profile (float)
         """
         
+        segmentLength = np.linalg.norm(end[0:2]-start[0:2])
+        maxTimeToTraverse = segmentLength/np.amin(vTraj.T[0])
+        maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
+
+        self.poses = np.zeros([maxStepsToTraverse,3])
+        self.controls = np.zeros([maxStepsToTraverse,2])
+
+        pose = start
+        v_index = 0
+        i = 0
+
+        dirVec = (end[0:2]-start[0:2])/segmentLength
+
+        while np.linalg.norm(end[0:2] - pose[0:2]) > (dT*np.amax(vTraj.T[0])):
+            
+            pose = np.append(pose[0:2] + np.array(dirVec*vTraj[v_index][0]*dT), start[2]) 
+    
+            self.poses[i] = pose
+            self.controls[i] = np.array([vTraj[v_index][0], 0.0])
+
+            i = i + 1
+            if v_index < len(vTraj) - 1:
+                v_index = v_index + 1
+
+        self.poses = self.poses[0:i] #trim excess
+        self.controls = self.controls[0:i] #trim excess
+
+
+
+

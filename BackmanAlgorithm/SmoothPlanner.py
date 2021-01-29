@@ -24,12 +24,12 @@ class SmoothPathPlanner:
         self.kDDotMax = kConstraints[4]
         self.kDDotMin = kConstraints[5]
 
-        self.vMax = kConstraints[0]
-        self.vMin = kConstraints[1]
-        self.vDotMax = kConstraints[2]
-        self.vDotMin = kConstraints[3]
-        self.vDDotMax = kConstraints[4]
-        self.vDDotMin = kConstraints[5]
+        self.vMax = vConstraints[0]
+        self.vMin = vConstraints[1]
+        self.vDotMax = vConstraints[2]
+        self.vDotMin = vConstraints[3]
+        self.vDDotMax = vConstraints[4]
+        self.vDDotMin = vConstraints[5]
 
         self.headlandSpeed = headlandSpeed
         self.headlandSpeedReverse = headlandSpeedReverse
@@ -117,7 +117,7 @@ class SmoothPathPlanner:
         if (len(kTraj) < len(vTraj)) and not fromStart:  # cut from end of vTraj
             vTraj = vTraj[0:len(kTraj)]
         elif (len(kTraj) < len(vTraj)) and fromStart:  # cut from start of vTraj
-            vTraj = vTraj[len(vTraj) - len(kTraj):len(vTraj)]
+            vTraj = vTraj[len(vTraj) - len(kTraj):len(vTraj)] - np.array([0, vTraj[len(vTraj) - len(kTraj)][1]])
         elif (len(kTraj) > len(vTraj)) and not fromStart: # add to end of vTraj
             vTraj = np.append(vTraj, np.array(
                 [[vTraj[-1][0], kTraj[i + len(vTraj)][1]]  for i in range((len(kTraj) - len(vTraj)))]), axis=0)
@@ -264,15 +264,14 @@ class SmoothPathPlanner:
 
             if len(v_S1) > len(trajectories['vTraj']):
                 cut_v_S1 = True
-                cut_v_S1_index = len(trajectories['vTraj'])-1
+                cut_v_S1_index = len(trajectories['vTraj'])
             else:
                 cut_v_S1 = False
-                v_C1 = trajectories['vTraj'][-1][0]
+                v_C1 = np.array([[trajectories['vTraj'][-1][0], 0],[trajectories['vTraj'][-1][0], self.dT]]) # TODO: fix this and add clause to generate CC and line segment
             xo = [self.initialState.x, self.initialState.y,
                   self.initialState.theta]
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo)
             
-
             ################ generate last connecting spiral ################
             K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4, 0)
             v_S4 = self.generateSpeedTrajectory(
@@ -284,7 +283,7 @@ class SmoothPathPlanner:
                 cut_v_S4_index = len(v_S4) - len(trajectories['vTraj'])
             else:
                 cut_v_S4 = False
-                v_C3 = trajectories['vTraj'][0][0]
+                v_C3 = np.array([[trajectories['vTraj'][0][0], 0],[trajectories['vTraj'][0][0], self.dT]])
 
             xo = [0, 0, 0]
             self.S4 = SpiralSegment(
@@ -296,6 +295,7 @@ class SmoothPathPlanner:
             K_S2 = self.generateCurvatureTrajectory(self.k_C1, self.k_C2, 0)
             xo = [0, 0, 0]
             #TODO: special circumstance where K trajectory is not long enough to allow for changes to velocity, in this case extend K trajectory by adding zeros to end.
+
             if self.reverse:
                 v_S2 = self.generateSpeedTrajectory(self.headlandSpeed, 0, 0)
                 v_S2 = np.append(v_S2, self.generateSpeedTrajectory(
@@ -311,7 +311,7 @@ class SmoothPathPlanner:
                                             for i in range(len(K_S2) - len(v_S2))])
                     v_S2 = np.append(v_S2, extend_v_S2, axis=0)
                 else:
-                    v_S2 = np.array([[v_C1, K_S2[i][1]] for i in range(len(K_S2))])
+                    v_S2 = np.array([[v_C1[0][0], K_S2[i][1]] for i in range(len(K_S2))])
 
                 self.S2 = SpiralSegment(K_S2, v_S2, xo)
 
@@ -334,7 +334,7 @@ class SmoothPathPlanner:
                                             for i in range(len(K_S3) - len(v_S3))])
                     v_S3 = np.append(v_S3, extend_v_S3, axis=0)
                 else:
-                    v_S3 = np.array([[v_C3, K_S3[i][1]] for i in range(len(K_S3))])
+                    v_S3 = np.array([[v_C3[0][0], K_S3[i][1]] for i in range(len(K_S3))])
 
                 self.S3 = SpiralSegment(K_S3, v_S3, xo)
 
@@ -382,6 +382,8 @@ class SmoothPathPlanner:
                     continue
                 
                 ################ make C2 segment ################
+                v_C2 = np.array([[1,0],[1,0]])
+                self.C2 = LineSegment(v_C2 , self.S2.poses[-1], self.S3.poses[0], self.dT)
 
             ################ generate C1 and C3 ################
             v_C1 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
@@ -389,8 +391,7 @@ class SmoothPathPlanner:
 
             v_C3 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
             self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
-
-
+            
             self.path_is_not_feasible = False
 
         # plotting stuff
@@ -424,7 +425,7 @@ class SmoothPathPlanner:
         # for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
         #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
-        plt.xlim([-1, 2.5])
+        plt.xlim([-1, 5])
         plt.ylim([-1, 2.5])
         plt.savefig("trajectory.png")
 
@@ -435,7 +436,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(1, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(5.0, 0, -0.5*np.pi, 1, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -453,7 +454,7 @@ def main():
 
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 1.0
+    vDotMax = 0.5
     vDotMin = -.75
     vDDotMax = 1.0
     vDDotMin = -1.0
@@ -473,7 +474,7 @@ def main():
 
     planSmoothInst = SmoothPathPlanner()
 
-    pathType = LRL
+    pathType = RSR
     planSmoothInst.setConstraints(
         kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setNominalCurvatures(

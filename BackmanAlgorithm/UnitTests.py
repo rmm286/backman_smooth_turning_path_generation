@@ -1,8 +1,6 @@
-import PathSegment
+from SmoothPlanner import SmoothPathPlanner
 
 
-def pathSegmentTest():
-    return 0
 
 def main():
     pathSegmentTest()
