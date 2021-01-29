@@ -87,11 +87,11 @@ class PathSegment:
 
 class SpiralSegment(PathSegment):
 
-    def __init__(self, kTrajectory, vTrajectory, xo):
-        self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo)
-        self.controls = np.array([[kTrajectory[i][0], vTrajectory[i][0]] for i in range(len(kTrajectory))]) #TODO: optimize with array operations
+    def __init__(self, kTrajectory, vTrajectory, xo, dT):
+        self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo, dT)
+        self.controls = np.vstack([kTrajectory,vTrajectory])
     
-    def integrateTrajectory(self, kTrajectory, vTrajectory, xo):
+    def integrateTrajectory(self, kTrajectory, vTrajectory, xo, dT):
         """ 
         Performs integration on dyanmic model using LSODA from odeint. kTrajetory and vTrajectory must be of equal length.
 
@@ -108,11 +108,11 @@ class SpiralSegment(PathSegment):
             raise ValueError(
                 "curvature and speed trajectories not same length")
 
-        t = [i[1] for i in kTrajectory]
-        u = np.empty_like(kTrajectory)
+        t = [i*dT for i in range(len(kTrajectory))]
+        u = np.empty([len(kTrajectory), 2])
         for i in range(len(kTrajectory)):
-            u[i][0] = vTrajectory[i][0]
-            u[i][1] = kTrajectory[i][0]
+            u[i][0] = vTrajectory[i]
+            u[i][1] = kTrajectory[i]
         x = np.empty([len(kTrajectory), 3])
         x[0] = xo
         for i in range(1, len(t)):
