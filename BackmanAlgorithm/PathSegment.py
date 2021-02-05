@@ -192,7 +192,7 @@ class CCSegment(PathSegment):
 
 class C2ArcSegment(PathSegment):
 
-    def __init__(self, curvature, v1, v2, start, end, center, dT):
+    def __init__(self, curvature, v1, v2, start, end, center, reverse, dT):
         """
         Generates the center C2 segment from start to end coordinates, with given curvature, center of rotation and speed profile. 
 
@@ -208,6 +208,10 @@ class C2ArcSegment(PathSegment):
         
         ang1 = np.arctan2(start[1]-center[1],start[0]-center[0])
         ang2 = np.arctan2(end[1]-center[1], end[0]-center[0])
+
+        if reverse:
+            ang1, ang2 = ang2, ang1
+            
         r = np.linalg.norm(start[0:2]-center)
 
         if(curvature > 0 and ang2 < ang1):
@@ -217,7 +221,7 @@ class C2ArcSegment(PathSegment):
             ang2 = ang2 - 2*np.pi
 
         arcLen = r*np.abs(ang2-ang1)
-        maxTimeToTraverse = arcLen/np.amin(np.append(v1,v2)) #TODO: change this to average
+        maxTimeToTraverse = arcLen/np.amin(np.abs(np.append(v1,v2))) #TODO: change this to average
         maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
 
         self.poses = np.zeros([maxStepsToTraverse,3])

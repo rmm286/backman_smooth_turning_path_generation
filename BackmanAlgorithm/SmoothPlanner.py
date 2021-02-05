@@ -270,8 +270,8 @@ class SmoothPathPlanner:
                 trajectories = self.makeTrajectoriesEqualLength(K_S22,v_S22, False)
                 self.cut_v_S2 = trajectories['cutV']
                 v_C21 = trajectories['leftover']
-                v_S2 = np.append(v_S21, trajectories['vTraj'])
-                K_S2 = np.append(K_S21, trajectories['kTraj'])
+                v_S2 = np.append(v_S21, trajectories['vTraj'], axis = 0)
+                K_S2 = np.append(K_S21, trajectories['kTraj'], axis = 0)
                 self.S2 = SpiralSegment(K_S2, v_S2, xo, self.dT)
             else:
                 K_S2 = self.generateCurvatureTrajectory(self.k_C1, self.k_C2)
@@ -303,13 +303,13 @@ class SmoothPathPlanner:
                 
                 if len(v_S32) > len(K_S32):
                     diff = len(v_S32) - len(K_S32)
-                    K_S32 = np.append(np.zeros(diff), K_S32)
+                    K_S32 = np.append(np.zeros(diff), K_S32, axis = 0)
                 elif len(v_S32) < len(K_S32):
                     diff = len(K_S32) - len(v_S32)
-                    v_S32 = np.append(np.zeros(diff),v_S32)
+                    v_S32 = np.append(np.zeros(diff),v_S32, axis = 0 )
 
-                v_S3 = np.append(v_S31, v_S32)
-                K_S3 = np.append(K_S31, K_S32)
+                v_S3 = np.append(trajectories['vTraj'], v_S32, axis = 0)
+                K_S3 = np.append(trajectories['kTraj'], K_S32, axis = 0)
 
                 self.S3 = SpiralSegment(K_S3, v_S3, xo, self.dT)
             else:
@@ -343,7 +343,7 @@ class SmoothPathPlanner:
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
                 ################ make C2 segment ################
-                self.C2 = C2ArcSegment(self.k_C2, v_C21, v_C22, self.S2.poses[-1], self.S3.poses[0], self.omega_kplus1, self.dT)
+                self.C2 = C2ArcSegment(self.k_C2, v_C21, v_C22, self.S2.poses[-1], self.S3.poses[0], self.omega_kplus1, self.reverse, self.dT)
 
             else: #center is a line
 
@@ -405,7 +405,7 @@ class SmoothPathPlanner:
         #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
 
         plt.xlim([-1, 5])
-        plt.ylim([-1, 2.5])
+        plt.ylim([-1, 4])
         plt.savefig("trajectory.png")
 
         return self.path
@@ -415,7 +415,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(4.2, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(1.2, 0, -0.5*np.pi, 1, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -453,7 +453,7 @@ def main():
 
     planSmoothInst = SmoothPathPlanner()
 
-    pathType = RSR
+    pathType = R1L1R
     planSmoothInst.setConstraints(
         kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setNominalCurvatures(
