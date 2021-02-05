@@ -5,7 +5,7 @@ from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from PathSegment import SpiralSegment, CCSegment, LineSegment
+from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
@@ -106,56 +106,29 @@ class SmoothPathPlanner:
 
         return vTrajectory
 
-    def makeTrajectoriesEqualLength(self, kTraj, vTraj, fromStart=False):
+    def makeTrajectoriesEqualLength(self, kTrajIn, vTrajIn, fromStart=False):
         """
-        Takes curvature and velcity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
+        Takes curvature and velocity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
         """
+        cutV = False
+        if (len(kTrajIn) < len(vTrajIn)) and not fromStart:  # cut from end of vTraj
+            vTraj = vTrajIn[0:len(kTrajIn)]
+            leftover = vTrajIn[len(kTrajIn):len(vTrajIn)]
+            cutV = True
+        elif (len(kTrajIn) < len(vTrajIn)) and fromStart:  # cut from start of vTraj
+            vTraj = vTrajIn[len(vTrajIn) - len(kTrajIn):len(vTrajIn)]
+            leftover = vTrajIn[0:len(vTrajIn) - len(kTrajIn)]
+            cutV = True
+        elif (len(kTrajIn) > len(vTrajIn)) and not fromStart: # add to end of vTraj
+            extension = vTrajIn[-1]*np.ones(len(kTrajIn) - len(vTrajIn))
+            vTraj = np.append(vTrajIn, extension, axis=0)
+            leftover = vTrajIn[-1]*np.ones(2)
+        elif (len(kTrajIn) > len(vTrajIn)) and fromStart: # add to start of vTraj
+            extension = vTrajIn[0]*np.ones(len(kTrajIn) - len(vTrajIn))
+            vTraj = np.append(extension, vTrajIn, axis = 0)
+            leftover = vTrajIn[0]*np.ones(2)
 
-        if (len(kTraj) < len(vTraj)) and not fromStart:  # cut from end of vTraj
-            vTraj = vTraj[0:len(kTraj)]
-        elif (len(kTraj) < len(vTraj)) and fromStart:  # cut from start of vTraj
-            vTraj = vTraj[len(vTraj) - len(kTraj):len(vTraj)]
-        elif (len(kTraj) > len(vTraj)) and not fromStart: # add to end of vTraj
-            extension = vTraj[-1]*np.ones(len(kTraj) - len(vTraj))
-            vTraj = np.append(vTraj, extension, axis=0)
-        elif (len(kTraj) > len(vTraj)) and fromStart: # add to start of vTraj
-            extension = vTraj[0]*np.ones(len(kTraj) - len(vTraj))
-            vTraj = np.append(extension, vTraj, axis = 0)
-
-        return {'kTraj': kTraj, 'vTraj': vTraj}
-
-    def makeTrajectoriesEqualLengthAndMatchZeros(self, kTraj, vTraj):
-        """
-        From section 2.2 curvature and velocity must be zero at point where velocity changes
-        From predefined turning types the curvature trajectory will always have a zero point when manuever involved reversing direction. 
-
-        This function matches the zero positions and then calls makeTrajectoriesEqualLength on result.
-
-        TODO: make edits for removing time values
-        """
-
-        # find zero point in kTraj
-        kValArray = [np.abs(i[0]) for i in kTraj]
-        vValArray = [np.abs(i[0]) for i in vTraj]
-        kZeroIndex = np.argmin(kValArray)
-        vZeroIndex = np.argmin(vValArray)
-
-        kZeroTime = kTraj[kZeroIndex][1]
-
-        if kZeroIndex < vZeroIndex: #extend kTraj
-            diff = vZeroIndex - kZeroIndex
-            kTrajExtension = np.array(
-                [[0, kTraj[kZeroIndex][1] + (i+1)*self.dT] for i in range(diff)])
-            kTraj = np.insert(kTraj, kZeroIndex, kTrajExtension, axis=0)
-
-            return self.makeTrajectoriesEqualLength(kTraj, vTraj)
-        else:
-            diff = kZeroIndex - vZeroIndex
-            vTrajExtension = np.array(
-                [[0, vTraj[kZeroIndex][1] + (i+1)*self.dT] for i in range(diff)])
-            vTraj = np.insert(vTraj, vZeroIndex, vTrajExtension, axis=0)
-
-            return self.makeTrajectoriesEqualLength(kTraj, vTraj)
+        return {'kTraj': kTrajIn, 'vTraj': vTraj, 'cutV': cutV, 'leftover': leftover }
 
     def calculateCenterLine(self):
         """
@@ -250,28 +223,19 @@ class SmoothPathPlanner:
 
             trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
 
-            if len(v_S1) > len(trajectories['vTraj']):
-                cut_v_S1 = True
-                cut_v_S1_index = len(trajectories['vTraj'])
-            else:
-                cut_v_S1 = False
-                v_C1 = np.array([trajectories['vTraj'][-1],trajectories['vTraj'][-1]]) # TODO: fix this and add clause to generate CC and line segment
-            xo = [self.initialState.x, self.initialState.y,
-                  self.initialState.theta]
+            self.cut_v_S1 = trajectories['cutV']
+            v_C1 = trajectories['leftover']
+            
+            xo = [self.initialState.x, self.initialState.y,self.initialState.theta]
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
             
             ################ generate last connecting spiral ################
             K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4)
-            v_S4 = self.generateSpeedTrajectory(
-                self.headlandSpeed, self.finalState.v)
+            v_S4 = self.generateSpeedTrajectory(self.headlandSpeed, self.finalState.v)
             trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, True)
-
-            if len(v_S4) > len(trajectories['vTraj']):
-                cut_v_S4 = True
-                cut_v_S4_index = len(v_S4) - len(trajectories['vTraj'])
-            else:
-                cut_v_S4 = False
-                v_C3 = np.array([trajectories['vTraj'][0],trajectories['vTraj'][0]])
+            
+            self.cut_v_S4 = trajectories['cutV']
+            v_C3 = trajectories['leftover']
 
             xo = [0, 0, 0]
             self.S4 = SpiralSegment(
@@ -279,50 +243,83 @@ class SmoothPathPlanner:
 
             self.S4.placePath(self.finalState.x, self.finalState.y, self.finalState.theta, False)
 
-            ################ generate second conneting spiral ################
-            K_S2 = self.generateCurvatureTrajectory(self.k_C1, self.k_C2)
+            ################ generate second connecting spiral ################
+            
             xo = [0, 0, 0]
-            #TODO: special circumstance where K trajectory is not long enough to allow for changes to velocity, in this case extend K trajectory by adding zeros to end.
-
-            if self.reverse:
-                v_S2 = self.generateSpeedTrajectory(self.headlandSpeed, 0)
-                v_S2 = np.append(v_S2, self.generateSpeedTrajectory(
-                    0, self.headlandSpeedReverse), axis=0)
-                trajectories = self.makeTrajectoriesEqualLengthAndMatchZeros(
-                    K_S2, v_S2)
-                self.S2 = SpiralSegment(
-                    trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
-            else:
-                if cut_v_S1:#TODO: fix
-                    v_S2 = v_S1[cut_v_S1_index:len(v_S1)]
-                    extend_v_S2 = v_S1[-1]*np.ones(len(K_S2) - len(v_S2))
-                    v_S2 = np.append(v_S2, extend_v_S2, axis=0)
-                else:
-                    v_S2 = v_C1[0]*np.ones_like(K_S2)
-
-                self.S2 = SpiralSegment(K_S2, v_S2, xo, self.dT)
-
-            ################ generate thrid connecting spiral ################
-            K_S3 = self.generateCurvatureTrajectory(self.k_C2, self.k_C3)
-            #TODO: special circumstance where K trajectory is not long enough to allow for changes to velocity, in this case extend K trajectory by adding zeros to end.
+            if self.cut_v_S1:
+                if not(hasattr(self,'vC1_index')): 
+                    #initial guess: C1 is long enough that vC1 is used completely
+                    self.vC1_index = len(v_C1)
+            else: #know VC1 and VC2
+                self.vC1_index = len(v_C1)
+            
             if self.reverse:
                 
-                v_S3 = self.generateSpeedTrajectory(self.headlandSpeedReverse, 0)
-                v_S3 = np.append(v_S3, self.generateSpeedTrajectory(
-                    0, self.headlandSpeed), axis=0)
-                trajectories = self.makeTrajectoriesEqualLengthAndMatchZeros(
-                    K_S3, v_S3)
-                self.S3 = SpiralSegment(
-                    trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
+                v_S21 = self.generateSpeedTrajectory(v_C1[max(self.vC1_index-1,0)], 0) #max function is in case vC1_index = 0
+                K_S21 = self.generateCurvatureTrajectory(self.k_C1, 0)
+
+                if len(v_S21) > len(K_S21):
+                    diff = len(v_S21) - len(K_S21)
+                    K_S21 = np.append(K_S21, np.zeros(diff))
+                elif len(v_S21) < len(K_S21):
+                    diff = len(K_S21) - len(v_S21)
+                    v_S21 = np.append(v_S21, np.zeros(diff))
+
+                v_S22 = self.generateSpeedTrajectory(0, self.headlandSpeedReverse)
+                K_S22 = self.generateCurvatureTrajectory(0, self.k_C2)
+                trajectories = self.makeTrajectoriesEqualLength(K_S22,v_S22, False)
+                self.cut_v_S2 = trajectories['cutV']
+                v_C21 = trajectories['leftover']
+                v_S2 = np.append(v_S21, trajectories['vTraj'])
+                K_S2 = np.append(K_S21, trajectories['kTraj'])
+                self.S2 = SpiralSegment(K_S2, v_S2, xo, self.dT)
             else:
-                if cut_v_S4: #TODO: fix
-                    v_S3 = v_S4[0:cut_v_S4_index]
-                    extend_v_S3 = v_S4[0]*np.ones(len(K_S3) - len(v_S3))
-                    v_S3 = np.append(v_S3, extend_v_S3, axis=0)
-                else:
-                    v_S3 = v_S4[0]*np.ones_like(K_S3)
+                K_S2 = self.generateCurvatureTrajectory(self.k_C1, self.k_C2)
+                v_S2 = v_C1[min(self.vC1_index, len(v_C1) - 1):len(v_C1)] # min function for the case where vC1_index > len(v_C1) - 1
+                trajectories = self.makeTrajectoriesEqualLength(K_S2, v_S2, False)
+                self.cut_v_S2 = trajectories['cutV']
+                v_C21 = trajectories['leftover']
+                self.S2 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
+
+            ################ generate third connecting spiral ################
+            
+            if self.cut_v_S4:
+                if not(hasattr(self,'vC4_index')):
+                    #initial guess: C3 is long enough that vC3 is used completely
+                    self.vC3_index = 0
+            else: #know value of v_C4
+                self.vC3_index = 0
+            
+            if self.reverse:
+                v_S31 = self.generateSpeedTrajectory(self.headlandSpeedReverse, 0)
+                K_S31 = self.generateCurvatureTrajectory(self.k_C2, 0)
+
+                trajectories = self.makeTrajectoriesEqualLength(K_S31, v_S31, True)
+                self.cut_v_S3 = trajectories['cutV']
+                v_C22 = trajectories['leftover']
+
+                v_S32 = self.generateSpeedTrajectory(0, v_C3[min(self.vC3_index, len(v_C3) - 1)])
+                K_S32 = self.generateCurvatureTrajectory(0, self.k_C3)
+                
+                if len(v_S32) > len(K_S32):
+                    diff = len(v_S32) - len(K_S32)
+                    K_S32 = np.append(np.zeros(diff), K_S32)
+                elif len(v_S32) < len(K_S32):
+                    diff = len(K_S32) - len(v_S32)
+                    v_S32 = np.append(np.zeros(diff),v_S32)
+
+                v_S3 = np.append(v_S31, v_S32)
+                K_S3 = np.append(K_S31, K_S32)
 
                 self.S3 = SpiralSegment(K_S3, v_S3, xo, self.dT)
+            else:
+
+                K_S3 = self.generateCurvatureTrajectory(self.k_C2, self.k_C3)
+                v_S3 = self.generateSpeedTrajectory(self.headlandSpeed, v_C3[min(self.vC3_index, len(v_C3) - 1)])
+                trajectories = self.makeTrajectoriesEqualLength(K_S3, v_S3, True)
+                self.cut_v_S3 = trajectories['cutV']
+                v_C22 = trajectories['leftover']
+                self.S3 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
 
             ################ generate center CC segment ################
             if np.abs(self.k_C2) > 0.005:  # center is an arc
@@ -346,8 +343,7 @@ class SmoothPathPlanner:
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
                 ################ make C2 segment ################
-                v_C2 = np.array([[self.headlandSpeed, self.dT * i] for i in range(200)])
-                self.C2 = CCSegment(self.k_C2, v_C2, self.S2.poses[-1], self.S3.poses[0], self.omega_kplus1, self.dT)
+                self.C2 = C2ArcSegment(self.k_C2, v_C21, v_C22, self.S2.poses[-1], self.S3.poses[0], self.omega_kplus1, self.dT)
 
             else: #center is a line
 
@@ -368,14 +364,11 @@ class SmoothPathPlanner:
                     continue
                 
                 ################ make C2 segment ################
-                v_C2 = np.array([[1,0],[1,0]])
-                self.C2 = LineSegment(v_C2 , self.S2.poses[-1], self.S3.poses[0], self.dT)
+                self.C2 = C2LineSegment(v_C21, v_C22, self.S2.poses[-1], self.S3.poses[0], self.dT)
 
             ################ generate C1 and C3 ################
-            v_C1 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
             self.C1 = CCSegment(self.k_C1, v_C1, self.S1.poses[-1], self.S2.poses[0], self.omega_k, self.dT)
 
-            v_C3 = np.array([[self.headlandSpeed, self.dT * i] for i in range(100)])
             self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
             
             self.path_is_not_feasible = False
@@ -395,14 +388,14 @@ class SmoothPathPlanner:
 
         plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
 
-        plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
-                  [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-        if hasattr(self,'omega_kplus1'):
-            plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
-                     [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        #plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
+            #      [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        #if hasattr(self,'omega_kplus1'):
+            #plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
+            #         [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
                      
-        plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
-                  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+        #plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
+                #  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
         # plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
         
         # for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
@@ -422,7 +415,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(5.0, 0, -0.5*np.pi, 1, 0)
+    finalState = SmoothPathState(4.2, 0, -0.5*np.pi, 1, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -440,8 +433,8 @@ def main():
 
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 5.0
-    vDotMin = -5.0
+    vDotMax = 0.9
+    vDotMin = -vDotMax
     vDDotMax = 1.0
     vDDotMin = -1.0
     headlandSpeed = vMax + 0.5
