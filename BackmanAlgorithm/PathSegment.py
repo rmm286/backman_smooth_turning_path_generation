@@ -87,7 +87,7 @@ class SpiralSegment(PathSegment):
 
     def __init__(self, kTrajectory, vTrajectory, xo, dT):
         self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo, dT)
-        self.controls = np.vstack([kTrajectory,vTrajectory])
+        self.controls = np.vstack([vTrajectory,kTrajectory,]).T
     
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo, dT):
         """ 

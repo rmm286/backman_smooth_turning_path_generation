@@ -11,8 +11,7 @@ class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
 
     def __init__(self):
-
-        self.path = []
+        self.path = np.array([])
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
         """ Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. """
@@ -90,7 +89,6 @@ class SmoothPathPlanner:
         Eqn. 7 from paper.
 
         TODO: implement vDDot constraints
-        TODO: optimize with matrix operations
         """
 
         vTolerance = 0.05
@@ -208,6 +206,75 @@ class SmoothPathPlanner:
 
         return self.omega_kplus1
 
+    def plotPath(self, plotCircles = False, plotArrows = False):
+
+        plt.figure(0)
+        
+        plt.plot([i[0] for i in self.S1.poses], [i[1] for i in self.S1.poses])
+        plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
+        plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
+        plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
+        plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
+        plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
+        plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
+
+        if plotCircles: 
+            plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
+            if hasattr(self,'omega_kplus1'):
+                plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
+
+            plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
+
+            plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+            if hasattr(self,'omega_kplus1'):
+                plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+                        
+            plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)], [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+            plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
+        
+        if plotArrows:
+            for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
+                plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            
+            for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
+                plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+
+        plt.savefig("trajectory.png")
+
+    def plotControls(self):
+
+        plt.figure(1)
+
+        timeseries_S1 = np.array([i*self.dT for i in range(len(self.S1.controls))])
+        timeseries_C1 = np.array([i*self.dT for i in range(len(self.C1.controls))]) + timeseries_S1[-1]
+        timeseries_S2 = np.array([i*self.dT for i in range(len(self.S2.controls))]) + timeseries_C1[-1]
+        timeseries_C2 = np.array([i*self.dT for i in range(len(self.C2.controls))]) + timeseries_S2[-1]
+        timeseries_S3 = np.array([i*self.dT for i in range(len(self.S3.controls))]) + timeseries_C2[-1]
+        timeseries_C3 = np.array([i*self.dT for i in range(len(self.C3.controls))]) + timeseries_S3[-1]
+        timeseries_S4 = np.array([i*self.dT for i in range(len(self.S4.controls))]) + timeseries_C3[-1]
+
+        plt.plot(timeseries_S1, [i[0] for i in self.S1.controls])
+        plt.plot(timeseries_C1, [i[0] for i in self.C1.controls])
+        plt.plot(timeseries_S2, [i[0] for i in self.S2.controls])
+        plt.plot(timeseries_C2, [i[0] for i in self.C2.controls])
+        plt.plot(timeseries_S3, [i[0] for i in self.S3.controls])
+        plt.plot(timeseries_C3, [i[0] for i in self.C3.controls])
+        plt.plot(timeseries_S4, [i[0] for i in self.S4.controls])
+
+        plt.savefig("velProfile.png")
+
+        plt.figure(2)
+
+        plt.plot(timeseries_S1, [i[1] for i in self.S1.controls])
+        plt.plot(timeseries_C1, [i[1] for i in self.C1.controls])
+        plt.plot(timeseries_S2, [i[1] for i in self.S2.controls])
+        plt.plot(timeseries_C2, [i[1] for i in self.C2.controls])
+        plt.plot(timeseries_S3, [i[1] for i in self.S3.controls])
+        plt.plot(timeseries_C3, [i[1] for i in self.C3.controls])
+        plt.plot(timeseries_S4, [i[1] for i in self.S4.controls])
+
+        plt.savefig("kProfile.png")
+
     def plan(self, dT):
 
         self.path_is_not_feasible = True
@@ -220,12 +287,9 @@ class SmoothPathPlanner:
                 self.k_C0, self.k_C1)
             v_S1 = self.generateSpeedTrajectory(
                 self.initialState.v, self.headlandSpeed)
-
             trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
-
             self.cut_v_S1 = trajectories['cutV']
             v_C1 = trajectories['leftover']
-            
             xo = [self.initialState.x, self.initialState.y,self.initialState.theta]
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
             
@@ -233,10 +297,8 @@ class SmoothPathPlanner:
             K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4)
             v_S4 = self.generateSpeedTrajectory(self.headlandSpeed, self.finalState.v)
             trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, True)
-            
             self.cut_v_S4 = trajectories['cutV']
             v_C3 = trajectories['leftover']
-
             xo = [0, 0, 0]
             self.S4 = SpiralSegment(
                 trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
@@ -293,11 +355,9 @@ class SmoothPathPlanner:
             if self.reverse:
                 v_S31 = self.generateSpeedTrajectory(self.headlandSpeedReverse, 0)
                 K_S31 = self.generateCurvatureTrajectory(self.k_C2, 0)
-
                 trajectories = self.makeTrajectoriesEqualLength(K_S31, v_S31, True)
                 self.cut_v_S3 = trajectories['cutV']
                 v_C22 = trajectories['leftover']
-
                 v_S32 = self.generateSpeedTrajectory(0, v_C3[min(self.vC3_index, len(v_C3) - 1)])
                 K_S32 = self.generateCurvatureTrajectory(0, self.k_C3)
                 
@@ -373,49 +433,16 @@ class SmoothPathPlanner:
             
             self.path_is_not_feasible = False
 
-        # plotting stuff
-        plt.plot([i[0] for i in self.S1.poses], [i[1] for i in self.S1.poses])
-        plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
-        plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
-        plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
-        plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
-        plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
-        plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
-
-        plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
-        if hasattr(self,'omega_kplus1'):
-            plt.plot(self.omega_kplus1[0], self.omega_kplus1[1], 'b^')
-
-        plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
-
-        #plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],
-            #      [(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-        #if hasattr(self,'omega_kplus1'):
-            #plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],
-            #         [(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-                     
-        #plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)],
-                #  [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-        # plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
-        
-        # for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
-        #     plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
-        
-        # for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
-        #     plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
-
-        plt.xlim([-1, 5])
-        plt.ylim([-1, 4])
-        plt.savefig("trajectory.png")
+        self.plotPath()
+        self.plotControls()
 
         return self.path
-
 
 def main():
 
     # x pos., ypos., orientation, speed, curvature
-    initialState = SmoothPathState(0, 0, 0.5*np.pi, 1, 0)
-    finalState = SmoothPathState(1.2, 0, -0.5*np.pi, 1, 0)
+    initialState = SmoothPathState(0, 0, 0.5*np.pi, 0.8, 0)
+    finalState = SmoothPathState(1.2, 0, -0.5*np.pi, 0.8, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -433,27 +460,33 @@ def main():
 
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 0.9
+    vDotMax = 5.0
     vDotMin = -vDotMax
     vDDotMax = 1.0
     vDDotMin = -1.0
-    headlandSpeed = vMax + 0.5
-    headlandSpeedReverse = vMin - 0.25
+    headlandSpeed = vMax
+    headlandSpeedReverse = vMin
+
+    if headlandSpeed > vMax:
+        raise ValueError("Headland Speed should not be larger than V Max")
+
+    if headlandSpeedReverse > vMin:
+        raise ValueError("Headland Speed in reverse should not be smaller than Vmin")
 
     vConstraints = [vMax, vMin, vDotMax, vDotMin, vDDotMax, vDDotMin]
 
     RSR = [kMin, 0.0, kMin, False]
-    # LSL = [KMax, 0, KMax, False]
+    LSL = [kMax, 0, kMax, False]
     LRL = [kMax, kMin, kMax, False]
-    # RLR = [KMin, KMax, KMin, False]
-    # LSR = [KMax, 0, KMin, False]
-    # RSL = [KMin, 0, KMax, False]
+    RLR = [kMin, kMax, kMin, False]
+    LSR = [kMax, 0, kMin, False]
+    RSL = [kMin, 0, kMax, False]
     R1L1R = [kMin, kMax, kMin, True]
-    # L1R1L = [KMax, KMin, KMax, True]
+    L1R1L = [kMax, kMin, kMax, True]
 
     planSmoothInst = SmoothPathPlanner()
 
-    pathType = R1L1R
+    pathType = LRL
     planSmoothInst.setConstraints(
         kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setNominalCurvatures(
@@ -462,6 +495,9 @@ def main():
 
     path = planSmoothInst.plan(dT)
 
-    # print(path)
+    # TODO: Fix discontinuity in C2
+    # TODO: fix how vC3 wont continue to vS4[0]
+    # TODO: Should always end at vFinal, why isn't it?
+
 
 main()
