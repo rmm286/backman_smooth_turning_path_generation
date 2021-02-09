@@ -69,7 +69,7 @@ class SmoothPathPlanner:
         TODO: implement kDDot constraints
         """
 
-        kTolerance = 0.01
+        kTolerance = self.dT*max(np.abs(self.kDotMax),np.abs(self.kDotMin))
         k = kInit
         kTrajectory = np.array([k])
 
@@ -91,7 +91,7 @@ class SmoothPathPlanner:
         TODO: implement vDDot constraints
         """
 
-        vTolerance = 0.05
+        vTolerance = self.dT*max(np.abs(self.vDotMax), np.abs(self.vDotMin))
         v = vInit
         vTrajectory = np.array([v])
 
@@ -346,7 +346,7 @@ class SmoothPathPlanner:
             ################ generate third connecting spiral ################
             
             if self.cut_v_S4:
-                if not(hasattr(self,'vC4_index')):
+                if not(hasattr(self,'vC3_index')):
                     #initial guess: C3 is long enough that vC3 is used completely
                     self.vC3_index = 0
             else: #know value of v_C4
@@ -419,7 +419,7 @@ class SmoothPathPlanner:
 
                 #check if they intersect
                 if self.S2.pathIntersectsWith(self.S3):
-                    self.k_C2 = self.k_C2 + self.k_C4*0.1 #increases or decreases the center curvature toward k_end
+                    self.k_C2 = self.k_C2 - np.sign(self.k_C2)*0.1*self.kMax #increases or decreases the center curvature toward k_end
                     # TODO: implemetnation for RSL LSR cases?
                     continue
                 
@@ -428,14 +428,49 @@ class SmoothPathPlanner:
 
             ################ generate C1 and C3 ################
             self.C1 = CCSegment(self.k_C1, v_C1, self.S1.poses[-1], self.S2.poses[0], self.omega_k, self.dT)
-
-            self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
+            self.vC1_index_new = self.C1.v_index
             
+            self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
+            if not(hasattr(self,'vC3_index_new')):
+                self.vC3_index_new = len(v_C3) - self.C3.v_index
+
+            ################ Check Feasbility ################
             self.path_is_not_feasible = False
 
+            if self.C1.angle > np.pi:
+                self.k_C1 = self.k_C1 - np.sign(self.k_C1)*0.1*self.kMax
+                self.path_is_not_feasible = True
+                continue
+
+            if self.C3.angle > np.pi:
+                self.k_C3 = self.k_C3 - np.sign(self.k_C3)*0.1*self.kMax
+                self.path_is_not_feasible = True
+                continue
+            
+            if (self.vC1_index != self.vC1_index_new):
+                self.vC1_index = self.vC1_index_new
+                self.path_is_not_feasible = True
+
+            if (self.vC3_index != self.vC3_index_new):
+                self.vC3_index = self.vC3_index_new
+                self.path_is_not_feasible = True
+            
+            if (self.C1.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S2.poses[0][0:2] - self.S1[-1][0:2]) > self.dT*self.vMax):
+                return 0
+
+            if (self.C3.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S4.poses[0][0:2] - self.S3[-1][0:2]) > self.dT*self.vMax):
+                return 0
+            
+            
+            
+
+
+            
+            
+
+        
         self.plotPath()
         self.plotControls()
-
         return self.path
 
 def main():
@@ -460,7 +495,7 @@ def main():
 
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 5.0
+    vDotMax = 0.3
     vDotMin = -vDotMax
     vDDotMax = 1.0
     vDDotMin = -1.0

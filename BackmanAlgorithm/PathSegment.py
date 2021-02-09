@@ -164,7 +164,10 @@ class CCSegment(PathSegment):
         if(curvature < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
 
+        self.angle = ang2-ang1
+
         arcLen = r*np.abs(ang2-ang1)
+        self.arcLen = arcLen
         maxTimeToTraverse = arcLen/np.amin(vTraj)
         maxStepsToTraverse = int(maxTimeToTraverse/dT) +1
 
@@ -173,7 +176,7 @@ class CCSegment(PathSegment):
 
         ang = ang1
         i = 0 #counter
-        v_index = i
+        v_index = 0
 
         while np.sign(curvature)*(ang - ang2) <= 0:
             w = abs(vTraj[v_index])/r
@@ -185,10 +188,9 @@ class CCSegment(PathSegment):
             i = i + 1
             if v_index < len(vTraj) - 1:
                 v_index = v_index + 1
-
+        self.v_index = v_index - vStartIndex
         self.poses = self.poses[0:i] #trim excess
         self.controls = self.controls[0:i] #trim excess
-
 
 class C2ArcSegment(PathSegment):
 
@@ -219,6 +221,8 @@ class C2ArcSegment(PathSegment):
         
         if(curvature < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
+
+        self.angle = ang2-ang1
 
         arcLen = r*np.abs(ang2-ang1)
         maxTimeToTraverse = arcLen/np.amin(np.abs(np.append(v1,v2))) #TODO: change this to average
