@@ -1,20 +1,27 @@
+#!/usr/bin/env python3
+
 import numpy as np
 from numpy import sin, cos, tan
-from ODESolver import RungeKutta4
 from StateSpaces import SmoothPathState
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment
+from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment, FullPath
 
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
 
     def __init__(self):
-        self.path = np.array([])
+        pass
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
         """ Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. """
+
+        if headlandSpeed > vConstraints[0]:
+            raise ValueError("Headland Speed should not be larger than V Max")
+
+        if headlandSpeedReverse > vConstraints[1]:
+            raise ValueError("Headland Speed in reverse should not be smaller than V Min")
 
         self.kMax = kConstraints[0]
         self.kMin = kConstraints[1]
@@ -33,11 +40,12 @@ class SmoothPathPlanner:
         self.headlandSpeed = headlandSpeed
         self.headlandSpeedReverse = headlandSpeedReverse
 
+
     def setStartAndGoal(self, initalState, finalState):
-        """ Set Start and Goal States, both states must be SE2States """
+        """ Set Start and Goal States, both states must be SmoothPathStates"""
 
         if not (isinstance(initalState, SmoothPathState) and isinstance(initalState, SmoothPathState)):
-            raise TypeError('Start and Goal not SE2States')
+            raise TypeError('Start and Goal not SmoothPathStates')
         else:
             self.initialState = initalState
             self.finalState = finalState
@@ -125,6 +133,12 @@ class SmoothPathPlanner:
             extension = vTrajIn[0]*np.ones(len(kTrajIn) - len(vTrajIn))
             vTraj = np.append(extension, vTrajIn, axis = 0)
             leftover = vTrajIn[0]*np.ones(2)
+        elif (len(kTrajIn) == len(vTrajIn)) and not fromStart:
+            leftover = vTrajIn[-1]*np.ones(2)
+            vTraj = vTrajIn
+        elif (len(kTrajIn) == len(vTrajIn)) and fromStart:
+            leftover = vTrajIn[0]*np.ones(2)
+            vTraj = vTrajIn
 
         return {'kTraj': kTrajIn, 'vTraj': vTraj, 'cutV': cutV, 'leftover': leftover }
 
@@ -152,6 +166,10 @@ class SmoothPathPlanner:
         rk = cos(S2[-1][2]) * (omega_S2_tS2[1] - S2[-1][1]) - sin(S2[-1][2]) * (omega_S2_tS2[0] - S2[-1][0])
         rkplus1 = cos(S3[0][2]) * (omega_S3_tC3[1] - S3[0][1]) - sin(S3[0][2]) * (omega_S3_tC3[0] - S3[0][0])
         d = np.linalg.norm(self.omega_kplus2 - self.omega_k)
+        
+        if np.abs(rkplus1 - rk) > d:
+            raise Exception
+
         w = np.arcsin((rkplus1 - rk)/d)
         vec = self.omega_kplus2 - self.omega_k
 
@@ -206,9 +224,10 @@ class SmoothPathPlanner:
 
         return self.omega_kplus1
 
-    def plotPath(self, plotCircles = False, plotArrows = False):
+    def plotPaths(self, plotCircles = False, plotArrows = False):
 
         plt.figure(0)
+        plt.clf()
         
         plt.plot([i[0] for i in self.S1.poses], [i[1] for i in self.S1.poses])
         plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
@@ -244,6 +263,7 @@ class SmoothPathPlanner:
     def plotControls(self):
 
         plt.figure(1)
+        plt.clf()
 
         timeseries_S1 = np.array([i*self.dT for i in range(len(self.S1.controls))])
         timeseries_C1 = np.array([i*self.dT for i in range(len(self.C1.controls))]) + timeseries_S1[-1]
@@ -264,6 +284,7 @@ class SmoothPathPlanner:
         plt.savefig("velProfile.png")
 
         plt.figure(2)
+        plt.clf()
 
         plt.plot(timeseries_S1, [i[1] for i in self.S1.controls])
         plt.plot(timeseries_C1, [i[1] for i in self.C1.controls])
@@ -387,7 +408,7 @@ class SmoothPathPlanner:
                 try:
                     self.calculateConstantArcs()
                 except: #can't use this turning type
-                    break 
+                    return 0 
                 
                 ################ place S2 and S3 segments ################
                 
@@ -408,42 +429,53 @@ class SmoothPathPlanner:
             else: #center is a line
 
                 ################ place S2 and S3 segments ################
-                self.phi_C2 = self.calculateCenterLine()
+                try:
+                    self.phi_C2 = self.calculateCenterLine()
+                except: #can't use this turning type
+                    return 0
+                
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
-                rotAngle = -1*self.phi_C2 - self.S2.poses[-1][2]
+                rotAngle = self.phi_C2 - self.S2.poses[-1][2]
                 self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
 
                 self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
                 rotAngle = self.phi_C2 - self.S3.poses[0][2]
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
-                #check if they intersect
+                #Check Feasilbility
                 if self.S2.pathIntersectsWith(self.S3):
                     self.k_C2 = self.k_C2 - np.sign(self.k_C2)*0.1*self.kMax #increases or decreases the center curvature toward k_end
-                    # TODO: implemetnation for RSL LSR cases?
                     continue
                 
+
                 ################ make C2 segment ################
                 self.C2 = C2LineSegment(v_C21, v_C22, self.S2.poses[-1], self.S3.poses[0], self.dT)
 
             ################ generate C1 and C3 ################
             self.C1 = CCSegment(self.k_C1, v_C1, self.S1.poses[-1], self.S2.poses[0], self.omega_k, self.dT)
-            self.vC1_index_new = self.C1.v_index
+            if not(hasattr(self,'vC1_index_new')):
+                self.vC1_index_new = self.C1.v_index
             
-            self.C3 = CCSegment(self.k_C3, v_C3, self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
+            self.C3 = CCSegment(self.k_C3, v_C3[min(self.vC3_index,len(v_C3)-1):len(v_C3)], self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
             if not(hasattr(self,'vC3_index_new')):
                 self.vC3_index_new = len(v_C3) - self.C3.v_index
 
             ################ Check Feasbility ################
             self.path_is_not_feasible = False
 
-            if self.C1.angle > np.pi:
+            if np.abs(self.C1.angle) > 1.9*np.pi:
                 self.k_C1 = self.k_C1 - np.sign(self.k_C1)*0.1*self.kMax
+                if np.abs(self.k_C1) < 10**-10:
+                    return 0
+                
                 self.path_is_not_feasible = True
                 continue
 
-            if self.C3.angle > np.pi:
+            if np.abs(self.C3.angle) > 1.9*np.pi:
                 self.k_C3 = self.k_C3 - np.sign(self.k_C3)*0.1*self.kMax
+                if np.abs(self.k_C3) <= 10**-10:
+                    return 0 
+
                 self.path_is_not_feasible = True
                 continue
             
@@ -455,29 +487,22 @@ class SmoothPathPlanner:
                 self.vC3_index = self.vC3_index_new
                 self.path_is_not_feasible = True
             
-            if (self.C1.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S2.poses[0][0:2] - self.S1[-1][0:2]) > self.dT*self.vMax):
+            if (self.C1.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S2.poses[0][0:2] - self.S1.poses[-1][0:2]) > self.dT*self.vMax):
                 return 0
 
-            if (self.C3.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S4.poses[0][0:2] - self.S3[-1][0:2]) > self.dT*self.vMax):
+            if (self.C3.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S4.poses[0][0:2] - self.S3.poses[-1][0:2]) > self.dT*self.vMax):
                 return 0
             
-            
-            
-
-
-            
-            
-
-        
-        self.plotPath()
+        self.plotPaths()
         self.plotControls()
-        return self.path
+
+        return FullPath(self.dT, self.S1, self.C1, self.S2, self.C2, self.S3, self.C3, self.S4)
 
 def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 0.8, 0)
-    finalState = SmoothPathState(1.2, 0, -0.5*np.pi, 0.8, 0)
+    finalState = SmoothPathState(8.2, 2, 0.5*np.pi, 0.8, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -502,15 +527,9 @@ def main():
     headlandSpeed = vMax
     headlandSpeedReverse = vMin
 
-    if headlandSpeed > vMax:
-        raise ValueError("Headland Speed should not be larger than V Max")
-
-    if headlandSpeedReverse > vMin:
-        raise ValueError("Headland Speed in reverse should not be smaller than Vmin")
-
     vConstraints = [vMax, vMin, vDotMax, vDotMin, vDDotMax, vDDotMin]
 
-    RSR = [kMin, 0.0, kMin, False]
+    RSR = [kMin, 0, kMin, False]
     LSL = [kMax, 0, kMax, False]
     LRL = [kMax, kMin, kMax, False]
     RLR = [kMin, kMax, kMin, False]
@@ -519,20 +538,57 @@ def main():
     R1L1R = [kMin, kMax, kMin, True]
     L1R1L = [kMax, kMin, kMax, True]
 
-    planSmoothInst = SmoothPathPlanner()
+    turningTypes = [RSR,LSL,LRL,RLR,LSR,RSL,R1L1R,L1R1L]
 
-    pathType = LRL
-    planSmoothInst.setConstraints(
-        kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
-    planSmoothInst.setNominalCurvatures(
-        pathType[0], pathType[1], pathType[2], pathType[3])
-    planSmoothInst.setStartAndGoal(initialState, finalState)
+    shortestPathFinalTime = np.inf
 
-    path = planSmoothInst.plan(dT)
+    for i in range(len(turningTypes)):
+        turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
+        pathType = turningTypes[i]
 
-    # TODO: Fix discontinuity in C2
-    # TODO: fix how vC3 wont continue to vS4[0]
-    # TODO: Should always end at vFinal, why isn't it?
+        planSmoothInst = SmoothPathPlanner()
+        planSmoothInst.setConstraints(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
+        planSmoothInst.setNominalCurvatures(pathType[0], pathType[1], pathType[2], pathType[3])
+        planSmoothInst.setStartAndGoal(initialState, finalState)
+
+        path = planSmoothInst.plan(dT)
+
+        if path == 0:
+            print("Path of type: ",turningTypeNames[i], " won't work, continuing to", turningTypeNames[min(i+1, len(turningTypeNames)- 1)])
+            continue
+        elif path.finalTime < shortestPathFinalTime:
+            shortestPath = path
+            shortestPathType = turningTypeNames[i]
+            shortestPathFinalTime = path.finalTime
+
+        print(path.finalTime)
+
+        plt.figure(3)
+        plt.clf()
+        plt.plot([i[0] for i in path.poses], [i[1] for i in path.poses])
+        plt.savefig("finalPath.png")
+
+        print("Finished Path Type: ",turningTypeNames[i], ", input to continue to type: ", turningTypeNames[min(i+1, len(turningTypeNames)- 1)])
+        input("...")
+    
+    plt.figure(3)
+    plt.clf()
+    plt.plot([i[0] for i in shortestPath.poses], [i[1] for i in shortestPath.poses])
+    plt.savefig("finalPath.png")
+    print("Shortest Path is of type: ", shortestPathType, " and has a final time of: ", shortestPathFinalTime)
 
 
 main()
+# TODO: don't use scipy integrator, write own rungekutta
+# Document
+# Optional:Get rid of SmoothPathStates and StateSpaces.py
+# put in edge cases for feasibility checking -> RSR LSL cases
+# implement fix for v_C3index problem (or verify that current solution is good)
+# make variable names consistent
+# make spacing consistent
+# make sure tolerances make sense, maybe pass tolerances as parameters
+# get timeseries data in all paths
+
+# TESTING: figure out how to trigger all feasibility checks and see if they function properly
+# Try with very low accelerations
+# try all turning types

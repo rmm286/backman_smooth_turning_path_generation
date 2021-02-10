@@ -188,7 +188,7 @@ class CCSegment(PathSegment):
             i = i + 1
             if v_index < len(vTraj) - 1:
                 v_index = v_index + 1
-        self.v_index = v_index - vStartIndex
+        self.v_index = v_index
         self.poses = self.poses[0:i] #trim excess
         self.controls = self.controls[0:i] #trim excess
 
@@ -212,14 +212,17 @@ class C2ArcSegment(PathSegment):
         ang2 = np.arctan2(end[1]-center[1], end[0]-center[0])
 
         if reverse:
-            ang1, ang2 = ang2, ang1
+            reverse = -1
+        else:
+            reverse = 1
             
         r = np.linalg.norm(start[0:2]-center)
 
-        if(curvature > 0 and ang2 < ang1):
+
+        if(curvature*reverse > 0 and ang2 < ang1):
             ang2 = ang2 + 2*np.pi
         
-        if(curvature < 0 and ang2 > ang1):
+        if(curvature*reverse < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
 
         self.angle = ang2-ang1
@@ -237,11 +240,11 @@ class C2ArcSegment(PathSegment):
         v_1_index = 0
         v_2_index = len(v2)-1
 
-        while np.sign(curvature)*(ang1 - ang2) <= 0:
+        while np.sign(curvature*reverse)*(ang1 - ang2) <= 0:
             
             if i%2 == 0: #forward step
                 w = abs(v1[v_1_index])/r
-                ang1 = ang1 + np.sign(curvature)*w*dT
+                ang1 = ang1 + reverse*np.sign(curvature)*w*dT
                 
                 self.poses[i1] = np.array([center[0] + r*cos(ang1), center[1] + r*sin(ang1), ang1 + np.sign(curvature)*np.pi/2.0])
                 self.controls[i1] = np.array([v1[v_1_index], curvature])
@@ -253,7 +256,7 @@ class C2ArcSegment(PathSegment):
 
             else: #back step
                 w = abs(v2[v_2_index])/r
-                ang2 = ang2 + -1*np.sign(curvature)*w*dT
+                ang2 = ang2 + -1*reverse*np.sign(curvature)*w*dT
                 
                 self.poses[i2] = np.array([center[0] + r*cos(ang2), center[1] + r*sin(ang2), ang2 + np.sign(curvature)*np.pi/2.0])
                 self.controls[i2] = np.array([v2[v_2_index], curvature])
@@ -364,3 +367,18 @@ class LineSegment(PathSegment):
 
         self.poses = self.poses[0:i] #trim excess
         self.controls = self.controls[0:i] #trim excess
+
+class FullPath(PathSegment):
+    def __init__(self, *args):
+
+        self.poses = args[1].poses
+        self.controls = args[1].controls
+
+        for path in args[2:len(args)]:
+            self.poses = np.append(self.poses,path.poses,axis=0)
+            self.controls = np.append(self.controls,path.controls,axis=0)
+        
+        self.finalTime = args[0] * len(self.poses)
+
+
+        
