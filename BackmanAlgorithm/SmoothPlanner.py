@@ -11,8 +11,8 @@ from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2L
 class SmoothPathPlanner:
     """ class for implementation of backman algorithm"""
 
-    def __init__(self):
-        pass
+    def __init__(self, dT):
+        self.dT = dT
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
         """ Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. """
@@ -92,11 +92,9 @@ class SmoothPathPlanner:
 
     def generateSpeedTrajectory(self, vInit, vFinal):
         """
-        Generates a velocity trajectory which has starting velcoity equal to vInit and final velocity equal to vFinal. Time values start form tInit and increment by self.dT
+        Generates a velocity trajectory which has starting velocity equal to vInit and final velocity equal to vFinal. Time values start form tInit and increment by self.dT
 
-        Eqn. 7 from paper.
-
-        TODO: implement vDDot constraints
+        Eqn. 7 from paper
         """
 
         vTolerance = self.dT*max(np.abs(self.vDotMax), np.abs(self.vDotMin))
@@ -111,6 +109,115 @@ class SmoothPathPlanner:
             vTrajectory = np.append(vTrajectory, np.array([v]), axis=0)
 
         return vTrajectory
+
+    def generateCurvatureTrajectoryDDot(self, k0, kFinal):
+        """
+        Generates a curvature trajectory which has starting velcoity equal to kInit and final curvature equal to kFinal.
+
+        This function differes from generateCurvatureTrajectory in that is produces transtion which is both continuous and differentiable, and respects kDDot constraints
+
+        """
+        kDotMax = self.kDotMax
+        kDotMin = self.kDotMin
+        kDDotMax = self.kDDotMax
+        kDDotMin = self.kDDotMin
+        dT = self.dT
+
+        if k0 < kFinal: #increase k to kf
+            riseTime = (kDotMax - k0)/(kDDotMax)
+            fallTime = (k0 - kDotMax)/(kDDotMin)
+            kRT = k0 + (kDDotMax/2.0)*riseTime**2
+            kFT = kRT + (kDDotMax*riseTime)*fallTime + (kDDotMin/2.0)*fallTime**2
+
+            if kFT < kFinal:
+                diff = kFinal - kFT
+                tTop = diff/kDotMax
+                k0toRT = np.array([k0 + (kDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
+                kRTtoDiff = np.array([k0toRT[-1] + kDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
+                kDifftoFT = np.array([kRTtoDiff[-1] + kDDotMax*riseTime*t + 0.5*kDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
+                kTrajectory = np.append(k0toRT,np.append(kRTtoDiff,kDifftoFT,axis=0),axis=0)
+            else:
+                t1 = np.sqrt((kFinal - k0)/((kDDotMax/2.0)*(1-kDDotMax/kDDotMin)))
+                t2 = -1*(kDDotMax/kDDotMin)*t1
+                k0tot1 = np.array([k0 + kDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                kt1tot2 = np.array([k0tot1[-1] + (kDDotMax*t1)*t + (kDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+        if k0 > kFinal: #decrease k to kf
+            fallTime = (kDotMin - k0)/(kDDotMin)
+            riseTime = (k0 - kDotMin)/(kDDotMax)
+            kFT = k0 + (kDDotMin/2.0)*fallTime**2
+            kRT = kFT + (kDDotMin*fallTime)*riseTime + (kDDotMax/2.0)*riseTime**2
+
+            if kRT > kFinal:
+                diff = kFinal - kRT
+                tBottom = diff/kDotMin
+                k0toFT = np.array([k0 + (kDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
+                kFTtoDiff = np.array([k0toFT[-1] + kDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
+                kDifftoRT = np.array([kFTtoDiff[-1] + kDDotMin*fallTime*t + 0.5*kDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
+                kTrajectory = np.append(k0toFT,np.append(kFTtoDiff,kDifftoRT,axis=0),axis=0)
+            else:
+                t1 = np.sqrt((kFinal - k0)/((kDDotMin/2.0)*(1-kDDotMin/kDDotMax)))
+                t2 = -1*(kDDotMin/kDDotMax)*t1
+                k0tot1 = np.array([k0 + kDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                kt1tot2 = np.array([k0tot1[-1] + (kDDotMin*t1)*t + (kDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+        
+        return kTrajectory
+
+    def generateSpeedTrajectoryDDot(self, k0, kFinal):
+        """
+        Generates a speed trajectory which has starting velcoity equal to vInit and final speed equal to vFinal.
+
+        This function differs from generateCurvatureTrajectory in that is produces transtion which is both continuous and differentiable, and respects kDDot constraints
+
+        Note: this is basically a copy of generateCurvatureTrajectoryDDot with k replaced with v in a very lazy way.
+        """
+        kDotMax = self.vDotMax
+        kDotMin = self.vDotMin
+        kDDotMax = self.vDDotMax
+        kDDotMin = self.vDDotMin
+        dT = self.dT
+
+        if k0 < kFinal: #increase k to kf
+            riseTime = (kDotMax - k0)/(kDDotMax)
+            fallTime = (k0 - kDotMax)/(kDDotMin)
+            kRT = k0 + (kDDotMax/2.0)*riseTime**2
+            kFT = kRT + (kDDotMax*riseTime)*fallTime + (kDDotMin/2.0)*fallTime**2
+
+            if kFT < kFinal:
+                diff = kFinal - kFT
+                tTop = diff/kDotMax
+                k0toRT = np.array([k0 + (kDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
+                kRTtoDiff = np.array([k0toRT[-1] + kDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
+                kDifftoFT = np.array([kRTtoDiff[-1] + kDDotMax*riseTime*t + 0.5*kDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
+                kTrajectory = np.append(k0toRT,np.append(kRTtoDiff,kDifftoFT,axis=0),axis=0)
+            else:
+                t1 = np.sqrt((kFinal - k0)/((kDDotMax/2.0)*(1-kDDotMax/kDDotMin)))
+                t2 = -1*(kDDotMax/kDDotMin)*t1
+                k0tot1 = np.array([k0 + kDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                kt1tot2 = np.array([k0tot1[-1] + (kDDotMax*t1)*t + (kDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+        if k0 > kFinal: #decrease k to kf
+            fallTime = (kDotMin - k0)/(kDDotMin)
+            riseTime = (k0 - kDotMin)/(kDDotMax)
+            kFT = k0 + (kDDotMin/2.0)*fallTime**2
+            kRT = kFT + (kDDotMin*fallTime)*riseTime + (kDDotMax/2.0)*riseTime**2
+
+            if kRT > kFinal:
+                diff = kFinal - kRT
+                tBottom = diff/kDotMin
+                k0toFT = np.array([k0 + (kDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
+                kFTtoDiff = np.array([k0toFT[-1] + kDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
+                kDifftoRT = np.array([kFTtoDiff[-1] + kDDotMin*fallTime*t + 0.5*kDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
+                kTrajectory = np.append(k0toFT,np.append(kFTtoDiff,kDifftoRT,axis=0),axis=0)
+            else:
+                t1 = np.sqrt((kFinal - k0)/((kDDotMin/2.0)*(1-kDDotMin/kDDotMax)))
+                t2 = -1*(kDDotMin/kDDotMax)*t1
+                k0tot1 = np.array([k0 + kDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                kt1tot2 = np.array([k0tot1[-1] + (kDDotMin*t1)*t + (kDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+        
+        return kTrajectory 
 
     def makeTrajectoriesEqualLength(self, kTrajIn, vTrajIn, fromStart=False):
         """
@@ -296,10 +403,9 @@ class SmoothPathPlanner:
 
         plt.savefig("kProfile.png")
 
-    def plan(self, dT):
+    def plan(self):
 
         self.path_is_not_feasible = True
-        self.dT = dT
 
         while self.path_is_not_feasible:
 
@@ -546,12 +652,12 @@ def main():
         turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
         pathType = turningTypes[i]
 
-        planSmoothInst = SmoothPathPlanner()
+        planSmoothInst = SmoothPathPlanner(dT)
         planSmoothInst.setConstraints(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
         planSmoothInst.setNominalCurvatures(pathType[0], pathType[1], pathType[2], pathType[3])
         planSmoothInst.setStartAndGoal(initialState, finalState)
 
-        path = planSmoothInst.plan(dT)
+        path = planSmoothInst.plan()
 
         if path == 0:
             print("Path of type: ",turningTypeNames[i], " won't work, continuing to", turningTypeNames[min(i+1, len(turningTypeNames)- 1)])
