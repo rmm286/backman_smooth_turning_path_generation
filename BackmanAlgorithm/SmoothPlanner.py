@@ -128,15 +128,20 @@ class SmoothPathPlanner:
             if xFT < xFinal:
                 diff = xFinal - xFT
                 tTop = diff/xDotMax
-                x0toRT = np.array([x0 + (xDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
-                xRTtoDiff = np.array([x0toRT[-1] + xDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
-                xDifftoFT = np.array([xRTtoDiff[-1] + xDDotMax*riseTime*t + 0.5*xDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
+                t = np.linspace(0,riseTime,int(riseTime/dT))
+                x0toRT = x0 + (xDDotMax/2.0)*t**2
+                t = np.linspace(dT, tTop, int(tTop/dT))
+                xRTtoDiff = x0toRT[-1] + xDDotMax*riseTime*t
+                t = np.linspace(dT,fallTime,int(fallTime/dT))
+                xDifftoFT = xRTtoDiff[-1] + xDDotMax*riseTime*t + 0.5*xDDotMin*t**2
                 xTrajectory = np.append(x0toRT,np.append(xRTtoDiff,xDifftoFT,axis=0),axis=0)
             else:
                 t1 = np.sqrt((xFinal - x0)/((xDDotMax/2.0)*(1-xDDotMax/xDDotMin)))
                 t2 = -1*(xDDotMax/xDDotMin)*t1
-                x0tot1 = np.array([x0 + xDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                xt1tot2 = np.array([x0tot1[-1] + (xDDotMax*t1)*t + (xDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                t = np.linspace(0,t1,int(t1/dT))
+                x0tot1 = x0 + xDDotMax/2.0*t**2
+                t = np.linspace(dT,t2,int(t2/dT))
+                xt1tot2 = x0tot1[-1] + (xDDotMax*t1)*t + (xDDotMin/2.0)*t**2
                 xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
         elif x0 > xFinal: #decrease x to xf
             fallTime = (xDotMin)/(xDDotMin)
@@ -147,15 +152,20 @@ class SmoothPathPlanner:
             if xRT > xFinal:
                 diff = xFinal - xRT
                 tBottom = diff/xDotMin
-                x0toFT = np.array([x0 + (xDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
-                xFTtoDiff = np.array([x0toFT[-1] + xDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
-                xDifftoRT = np.array([xFTtoDiff[-1] + xDDotMin*fallTime*t + 0.5*xDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
+                t = np.linspace(0,fallTime,int(fallTime/dT))
+                x0toFT = x0 + (xDDotMin/2.0)*t**2
+                t = np.linspace(dT, tBottom, int(tBottom/dT))
+                xFTtoDiff = x0toFT[-1] + xDDotMin*fallTime*t
+                t = np.linspace(dT,riseTime,int(riseTime/dT))
+                xDifftoRT = xFTtoDiff[-1] + xDDotMin*fallTime*t + 0.5*xDDotMax*t**2
                 xTrajectory = np.append(x0toFT,np.append(xFTtoDiff,xDifftoRT,axis=0),axis=0)
             else:
                 t1 = np.sqrt((xFinal - x0)/((xDDotMin/2.0)*(1-xDDotMin/xDDotMax)))
                 t2 = -1*(xDDotMin/xDDotMax)*t1
-                x0tot1 = np.array([x0 + xDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                xt1tot2 = np.array([x0tot1[-1] + (xDDotMin*t1)*t + (xDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                t = np.linspace(0,t1,int(t1/dT))
+                x0tot1 = x0 + xDDotMin/2.0*t**2
+                t = np.linspace(dT,t2,int(t2/dT))
+                xt1tot2 = x0tot1[-1] + (xDDotMin*t1)*t + (xDDotMax/2.0)*t**2
                 xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
         else: #x0 = xFinal
             xTrajectory = np.array([x0, xFinal])
@@ -173,7 +183,6 @@ class SmoothPathPlanner:
         xDDotMax = self.kDDotMax
         xDDotMin = self.kDDotMin
         
-
         return self.generateOptimalTrajectory(x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
 
     def generateSpeedTrajectoryDDot(self, x0, xFinal):
@@ -372,10 +381,9 @@ class SmoothPathPlanner:
         plt.savefig("kProfile.png")
 
     def plan(self):
-    """
-    Central planner function for the object. Returns a path based on the constraints, 
-
-    """
+        """
+        Central planner function for the object. Returns a path.
+        """
 
         self.path_is_not_feasible = True
 
