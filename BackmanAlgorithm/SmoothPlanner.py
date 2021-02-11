@@ -110,114 +110,82 @@ class SmoothPathPlanner:
 
         return vTrajectory
 
-    def generateCurvatureTrajectoryDDot(self, k0, kFinal):
+    def generateOptimalTrajectory(self, x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin):
         """
-        Generates a curvature trajectory which has starting velcoity equal to kInit and final curvature equal to kFinal.
+        Analytically solves the optimal trajectory problem to find the x trajectory which moves from x0 to xFinal in minimum time subject to arbitrary boundary constraints on the first and second derivative of x.
 
-        This function differes from generateCurvatureTrajectory in that is produces transtion which is both continuous and differentiable, and respects kDDot constraints
-
+        Returns optimal trajectory as a 1xN numpy array of floats.
         """
-        kDotMax = self.kDotMax
-        kDotMin = self.kDotMin
-        kDDotMax = self.kDDotMax
-        kDDotMin = self.kDDotMin
+
         dT = self.dT
 
-        if k0 < kFinal: #increase k to kf
-            riseTime = (kDotMax - k0)/(kDDotMax)
-            fallTime = (k0 - kDotMax)/(kDDotMin)
-            kRT = k0 + (kDDotMax/2.0)*riseTime**2
-            kFT = kRT + (kDDotMax*riseTime)*fallTime + (kDDotMin/2.0)*fallTime**2
+        if x0 < xFinal: #increase x to xf
+            riseTime = (xDotMax)/(xDDotMax)
+            fallTime = (-1*xDotMax)/(xDDotMin)
+            xRT = x0 + (xDDotMax/2.0)*riseTime**2
+            xFT = xRT + (xDDotMax*riseTime)*fallTime + (xDDotMin/2.0)*fallTime**2
 
-            if kFT < kFinal:
-                diff = kFinal - kFT
-                tTop = diff/kDotMax
-                k0toRT = np.array([k0 + (kDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
-                kRTtoDiff = np.array([k0toRT[-1] + kDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
-                kDifftoFT = np.array([kRTtoDiff[-1] + kDDotMax*riseTime*t + 0.5*kDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
-                kTrajectory = np.append(k0toRT,np.append(kRTtoDiff,kDifftoFT,axis=0),axis=0)
+            if xFT < xFinal:
+                diff = xFinal - xFT
+                tTop = diff/xDotMax
+                x0toRT = np.array([x0 + (xDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
+                xRTtoDiff = np.array([x0toRT[-1] + xDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
+                xDifftoFT = np.array([xRTtoDiff[-1] + xDDotMax*riseTime*t + 0.5*xDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
+                xTrajectory = np.append(x0toRT,np.append(xRTtoDiff,xDifftoFT,axis=0),axis=0)
             else:
-                t1 = np.sqrt((kFinal - k0)/((kDDotMax/2.0)*(1-kDDotMax/kDDotMin)))
-                t2 = -1*(kDDotMax/kDDotMin)*t1
-                k0tot1 = np.array([k0 + kDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                kt1tot2 = np.array([k0tot1[-1] + (kDDotMax*t1)*t + (kDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
-                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
-        if k0 > kFinal: #decrease k to kf
-            fallTime = (kDotMin - k0)/(kDDotMin)
-            riseTime = (k0 - kDotMin)/(kDDotMax)
-            kFT = k0 + (kDDotMin/2.0)*fallTime**2
-            kRT = kFT + (kDDotMin*fallTime)*riseTime + (kDDotMax/2.0)*riseTime**2
+                t1 = np.sqrt((xFinal - x0)/((xDDotMax/2.0)*(1-xDDotMax/xDDotMin)))
+                t2 = -1*(xDDotMax/xDDotMin)*t1
+                x0tot1 = np.array([x0 + xDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                xt1tot2 = np.array([x0tot1[-1] + (xDDotMax*t1)*t + (xDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
+        elif x0 > xFinal: #decrease x to xf
+            fallTime = (xDotMin)/(xDDotMin)
+            riseTime = (-1*xDotMin)/(xDDotMax)
+            xFT = x0 + (xDDotMin/2.0)*fallTime**2
+            xRT = xFT + (xDDotMin*fallTime)*riseTime + (xDDotMax/2.0)*riseTime**2
 
-            if kRT > kFinal:
-                diff = kFinal - kRT
-                tBottom = diff/kDotMin
-                k0toFT = np.array([k0 + (kDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
-                kFTtoDiff = np.array([k0toFT[-1] + kDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
-                kDifftoRT = np.array([kFTtoDiff[-1] + kDDotMin*fallTime*t + 0.5*kDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
-                kTrajectory = np.append(k0toFT,np.append(kFTtoDiff,kDifftoRT,axis=0),axis=0)
+            if xRT > xFinal:
+                diff = xFinal - xRT
+                tBottom = diff/xDotMin
+                x0toFT = np.array([x0 + (xDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
+                xFTtoDiff = np.array([x0toFT[-1] + xDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
+                xDifftoRT = np.array([xFTtoDiff[-1] + xDDotMin*fallTime*t + 0.5*xDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
+                xTrajectory = np.append(x0toFT,np.append(xFTtoDiff,xDifftoRT,axis=0),axis=0)
             else:
-                t1 = np.sqrt((kFinal - k0)/((kDDotMin/2.0)*(1-kDDotMin/kDDotMax)))
-                t2 = -1*(kDDotMin/kDDotMax)*t1
-                k0tot1 = np.array([k0 + kDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                kt1tot2 = np.array([k0tot1[-1] + (kDDotMin*t1)*t + (kDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
-                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+                t1 = np.sqrt((xFinal - x0)/((xDDotMin/2.0)*(1-xDDotMin/xDDotMax)))
+                t2 = -1*(xDDotMin/xDDotMax)*t1
+                x0tot1 = np.array([x0 + xDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
+                xt1tot2 = np.array([x0tot1[-1] + (xDDotMin*t1)*t + (xDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
+                xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
+        else: #x0 = xFinal
+            xTrajectory = np.array([x0, xFinal])
         
-        return kTrajectory
+        return xTrajectory
 
-    def generateSpeedTrajectoryDDot(self, k0, kFinal):
+    def generateCurvatureTrajectoryDDot(self, x0, xFinal):
         """
-        Generates a speed trajectory which has starting velcoity equal to vInit and final speed equal to vFinal.
+        Helper function to call generateOptimalTrajectory and return a trajectory with curvature equal to kInit and final curvature equal to kFinal.
 
-        This function differs from generateCurvatureTrajectory in that is produces transtion which is both continuous and differentiable, and respects kDDot constraints
-
-        Note: this is basically a copy of generateCurvatureTrajectoryDDot with k replaced with v in a very lazy way.
+        This function differs from generateCurvatureTrajectoryDDot in that it produces a transition which is both continuous and differentiable, and respects kDDot constraints.
         """
-        kDotMax = self.vDotMax
-        kDotMin = self.vDotMin
-        kDDotMax = self.vDDotMax
-        kDDotMin = self.vDDotMin
-        dT = self.dT
-
-        if k0 < kFinal: #increase k to kf
-            riseTime = (kDotMax - k0)/(kDDotMax)
-            fallTime = (k0 - kDotMax)/(kDDotMin)
-            kRT = k0 + (kDDotMax/2.0)*riseTime**2
-            kFT = kRT + (kDDotMax*riseTime)*fallTime + (kDDotMin/2.0)*fallTime**2
-
-            if kFT < kFinal:
-                diff = kFinal - kFT
-                tTop = diff/kDotMax
-                k0toRT = np.array([k0 + (kDDotMax/2.0)*t**2 for t in np.linspace(0,riseTime,int(riseTime/dT))])
-                kRTtoDiff = np.array([k0toRT[-1] + kDDotMax*riseTime*t for t in np.linspace(dT, tTop, int(tTop/dT))])
-                kDifftoFT = np.array([kRTtoDiff[-1] + kDDotMax*riseTime*t + 0.5*kDDotMin*t**2 for t in np.linspace(dT,fallTime,int(fallTime/dT))])
-                kTrajectory = np.append(k0toRT,np.append(kRTtoDiff,kDifftoFT,axis=0),axis=0)
-            else:
-                t1 = np.sqrt((kFinal - k0)/((kDDotMax/2.0)*(1-kDDotMax/kDDotMin)))
-                t2 = -1*(kDDotMax/kDDotMin)*t1
-                k0tot1 = np.array([k0 + kDDotMax/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                kt1tot2 = np.array([k0tot1[-1] + (kDDotMax*t1)*t + (kDDotMin/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
-                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
-        if k0 > kFinal: #decrease k to kf
-            fallTime = (kDotMin - k0)/(kDDotMin)
-            riseTime = (k0 - kDotMin)/(kDDotMax)
-            kFT = k0 + (kDDotMin/2.0)*fallTime**2
-            kRT = kFT + (kDDotMin*fallTime)*riseTime + (kDDotMax/2.0)*riseTime**2
-
-            if kRT > kFinal:
-                diff = kFinal - kRT
-                tBottom = diff/kDotMin
-                k0toFT = np.array([k0 + (kDDotMin/2.0)*t**2 for t in np.linspace(0,fallTime,int(fallTime/dT))])
-                kFTtoDiff = np.array([k0toFT[-1] + kDDotMin*fallTime*t for t in np.linspace(dT, tBottom, int(tBottom/dT))])
-                kDifftoRT = np.array([kFTtoDiff[-1] + kDDotMin*fallTime*t + 0.5*kDDotMax*t**2 for t in np.linspace(dT,riseTime,int(riseTime/dT))])
-                kTrajectory = np.append(k0toFT,np.append(kFTtoDiff,kDifftoRT,axis=0),axis=0)
-            else:
-                t1 = np.sqrt((kFinal - k0)/((kDDotMin/2.0)*(1-kDDotMin/kDDotMax)))
-                t2 = -1*(kDDotMin/kDDotMax)*t1
-                k0tot1 = np.array([k0 + kDDotMin/2.0*t**2 for t in np.linspace(0,t1,int(t1/dT))])
-                kt1tot2 = np.array([k0tot1[-1] + (kDDotMin*t1)*t + (kDDotMax/2.0)*t**2 for t in np.linspace(dT,t2,int(t2/dT))])
-                kTrajectory = np.append(k0tot1,kt1tot2,axis=0)
+        xDotMax = self.kDotMax
+        xDotMin = self.kDotMin
+        xDDotMax = self.kDDotMax
+        xDDotMin = self.kDDotMin
         
-        return kTrajectory 
+
+        return self.generateOptimalTrajectory(x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
+
+    def generateSpeedTrajectoryDDot(self, x0, xFinal):
+        """
+        Helper function to call generateOptimalTrajectory and return a speed trajectory which has starting velcoity equal to vInit and final speed equal to vFinal.
+        """
+        xDotMax = self.vDotMax
+        xDotMin = self.vDotMin
+        xDDotMax = self.vDDotMax
+        xDDotMin = self.vDDotMin
+
+        return self.generateOptimalTrajectory(x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
 
     def makeTrajectoriesEqualLength(self, kTrajIn, vTrajIn, fromStart=False):
         """
@@ -251,7 +219,7 @@ class SmoothPathPlanner:
 
     def calculateCenterLine(self):
         """
-        Uses equations (17) through (21) of paper to create center line.
+        Uses equations (17) through (21) of paper to calcuate orientation of the center line.
         """
         S1 = self.S1.poses
         S2 = self.S2.poses
@@ -404,15 +372,19 @@ class SmoothPathPlanner:
         plt.savefig("kProfile.png")
 
     def plan(self):
+    """
+    Central planner function for the object. Returns a path based on the constraints, 
+
+    """
 
         self.path_is_not_feasible = True
 
         while self.path_is_not_feasible:
 
             ################ generate first connecting spiral ################
-            K_S1 = self.generateCurvatureTrajectory(
+            K_S1 = self.generateCurvatureTrajectoryDDot(
                 self.k_C0, self.k_C1)
-            v_S1 = self.generateSpeedTrajectory(
+            v_S1 = self.generateSpeedTrajectoryDDot(
                 self.initialState.v, self.headlandSpeed)
             trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
             self.cut_v_S1 = trajectories['cutV']
@@ -421,8 +393,8 @@ class SmoothPathPlanner:
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
             
             ################ generate last connecting spiral ################
-            K_S4 = self.generateCurvatureTrajectory(self.k_C3, self.k_C4)
-            v_S4 = self.generateSpeedTrajectory(self.headlandSpeed, self.finalState.v)
+            K_S4 = self.generateCurvatureTrajectoryDDot(self.k_C3, self.k_C4)
+            v_S4 = self.generateSpeedTrajectoryDDot(self.headlandSpeed, self.finalState.v)
             trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, True)
             self.cut_v_S4 = trajectories['cutV']
             v_C3 = trajectories['leftover']
@@ -444,8 +416,8 @@ class SmoothPathPlanner:
             
             if self.reverse:
                 
-                v_S21 = self.generateSpeedTrajectory(v_C1[max(self.vC1_index-1,0)], 0) #max function is in case vC1_index = 0
-                K_S21 = self.generateCurvatureTrajectory(self.k_C1, 0)
+                v_S21 = self.generateSpeedTrajectoryDDot(v_C1[max(self.vC1_index-1,0)], 0) #max function is in case vC1_index = 0
+                K_S21 = self.generateCurvatureTrajectoryDDot(self.k_C1, 0)
 
                 if len(v_S21) > len(K_S21):
                     diff = len(v_S21) - len(K_S21)
@@ -454,8 +426,8 @@ class SmoothPathPlanner:
                     diff = len(K_S21) - len(v_S21)
                     v_S21 = np.append(v_S21, np.zeros(diff))
 
-                v_S22 = self.generateSpeedTrajectory(0, self.headlandSpeedReverse)
-                K_S22 = self.generateCurvatureTrajectory(0, self.k_C2)
+                v_S22 = self.generateSpeedTrajectoryDDot(0, self.headlandSpeedReverse)
+                K_S22 = self.generateCurvatureTrajectoryDDot(0, self.k_C2)
                 trajectories = self.makeTrajectoriesEqualLength(K_S22,v_S22, False)
                 self.cut_v_S2 = trajectories['cutV']
                 v_C21 = trajectories['leftover']
@@ -463,7 +435,7 @@ class SmoothPathPlanner:
                 K_S2 = np.append(K_S21, trajectories['kTraj'], axis = 0)
                 self.S2 = SpiralSegment(K_S2, v_S2, xo, self.dT)
             else:
-                K_S2 = self.generateCurvatureTrajectory(self.k_C1, self.k_C2)
+                K_S2 = self.generateCurvatureTrajectoryDDot(self.k_C1, self.k_C2)
                 v_S2 = v_C1[min(self.vC1_index, len(v_C1) - 1):len(v_C1)] # min function for the case where vC1_index > len(v_C1) - 1
                 trajectories = self.makeTrajectoriesEqualLength(K_S2, v_S2, False)
                 self.cut_v_S2 = trajectories['cutV']
@@ -480,13 +452,13 @@ class SmoothPathPlanner:
                 self.vC3_index = 0
             
             if self.reverse:
-                v_S31 = self.generateSpeedTrajectory(self.headlandSpeedReverse, 0)
-                K_S31 = self.generateCurvatureTrajectory(self.k_C2, 0)
+                v_S31 = self.generateSpeedTrajectoryDDot(self.headlandSpeedReverse, 0)
+                K_S31 = self.generateCurvatureTrajectoryDDot(self.k_C2, 0)
                 trajectories = self.makeTrajectoriesEqualLength(K_S31, v_S31, True)
                 self.cut_v_S3 = trajectories['cutV']
                 v_C22 = trajectories['leftover']
-                v_S32 = self.generateSpeedTrajectory(0, v_C3[min(self.vC3_index, len(v_C3) - 1)])
-                K_S32 = self.generateCurvatureTrajectory(0, self.k_C3)
+                v_S32 = self.generateSpeedTrajectoryDDot(0, v_C3[min(self.vC3_index, len(v_C3) - 1)])
+                K_S32 = self.generateCurvatureTrajectoryDDot(0, self.k_C3)
                 
                 if len(v_S32) > len(K_S32):
                     diff = len(v_S32) - len(K_S32)
@@ -501,8 +473,8 @@ class SmoothPathPlanner:
                 self.S3 = SpiralSegment(K_S3, v_S3, xo, self.dT)
             else:
 
-                K_S3 = self.generateCurvatureTrajectory(self.k_C2, self.k_C3)
-                v_S3 = self.generateSpeedTrajectory(self.headlandSpeed, v_C3[min(self.vC3_index, len(v_C3) - 1)])
+                K_S3 = self.generateCurvatureTrajectoryDDot(self.k_C2, self.k_C3)
+                v_S3 = self.generateSpeedTrajectoryDDot(self.headlandSpeed, v_C3[min(self.vC3_index, len(v_C3) - 1)])
                 trajectories = self.makeTrajectoriesEqualLength(K_S3, v_S3, True)
                 self.cut_v_S3 = trajectories['cutV']
                 v_C22 = trajectories['leftover']
@@ -608,7 +580,7 @@ def main():
 
     # x pos., ypos., orientation, speed, curvature
     initialState = SmoothPathState(0, 0, 0.5*np.pi, 0.8, 0)
-    finalState = SmoothPathState(8.2, 2, 0.5*np.pi, 0.8, 0)
+    finalState = SmoothPathState(8.2, 0, -0.5*np.pi, 0.8, 0)
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -619,8 +591,8 @@ def main():
     kMin = -kMax
     kDotMax = 5.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
-    kDDotMax = 1.0
-    kDDotMin = -kDDotMax
+    kDDotMax = 5.0
+    kDDotMin = -5.0
 
     kConstraints = [kMax, kMin, kDotMax, kDotMin, kDDotMax, kDDotMin]
 
@@ -628,8 +600,8 @@ def main():
     vMin = -vMax
     vDotMax = 0.3
     vDotMin = -vDotMax
-    vDDotMax = 1.0
-    vDDotMin = -1.0
+    vDDotMax = 5.0
+    vDDotMin = -5.0
     headlandSpeed = vMax
     headlandSpeedReverse = vMin
 
