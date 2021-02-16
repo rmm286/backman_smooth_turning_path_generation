@@ -82,7 +82,7 @@ class SpiralSegment(PathSegment):
         Input:
             kTrajectory: Array of curvature values for each timestep
             vTrajectory: Array of velocity values for each timestep
-            xo: Inital pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
+            xo: Initial pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
             dT: static timestep
         """
 
@@ -91,12 +91,12 @@ class SpiralSegment(PathSegment):
     
     def integrateTrajectory(self, kTrajectory, vTrajectory, xo, dT):
         """ 
-        Performs integration on dyanmic model using LSODA from odeint. kTrajetory and vTrajectory must be of equal length.
+        Performs integration on dynamic model using LSODA from odeint. kTrajectory and vTrajectory must be of equal length.
 
         Input:
             kTrajectory: Array of curvature values for each timestep
             vTrajectory: Array of velocity values for each timestep
-            xo: Inital pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
+            xo: Initial pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
 
         Output:
             x: A Nx3 numpy array of [x,y,theta] poses for each timestep.
@@ -262,7 +262,7 @@ class C2LineSegment(PathSegment):
         """
         Generates the center C2 segment from start to end coordinates, with given curvature, center of rotation and speed profile. 
 
-        The speed profile is provided as two arrays, VC21, VC22. The algorithm builds the arrays alternating between forward iteration from the start point to backward iteration from the end. Once either speed profile is exhusted, the algorith continues building in the middle with the last value of speed. 
+        The speed profile is provided as two arrays, VC21, VC22. The algorithm builds the arrays alternating between forward iteration from the start point to backward iteration from the end. Once either speed profile is exhausted, the algorithm continues building in the middle with the last value of speed. 
         Input: 
             curvature: curvature of constant arc (float)
             v1: velocity profile of V_C21 arc segment (array of floats)
@@ -363,6 +363,3 @@ class FullPath(PathSegment):
             self.controls = np.append(self.controls,path.controls,axis=0)
         
         self.finalTime = args[0] * len(self.poses)
-
-
-        

@@ -7,6 +7,8 @@ from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2L
 class SmoothPathPlanner:
     """
     Class for implementation of Smooth curvature path generating algorithm as described in Juha Backman's 2015 paper "Smooth Turning PathGeneration for Agricultural Vehicles in Headlands".   
+    
+    Note that variable names are chosen either to conform to standard conventions or in some cases to reflect the naming conventions in the paper.
     """
 
     def __init__(self, dT):
@@ -49,21 +51,21 @@ class SmoothPathPlanner:
         self.headlandSpeed = headlandSpeed
         self.headlandSpeedReverse = headlandSpeedReverse
 
-    def setStartAndGoal(self, initalState, finalState):
+    def setStartAndGoal(self, initialState, finalState):
         """
         Set Start and Goal States.
 
         Input:
-            intialState: start state of vehicle [x, y, theta, v, k]
+            initialState: start state of vehicle [x, y, theta, v, k]
             finalState: end or goal state of vehicle [x, y, theta, v, k]
         """
 
-        if not (len(initalState) == 5 and len(finalState) == 5):
+        if not (len(initialState) == 5 and len(finalState) == 5):
             raise TypeError('Start and/or Goal not of correct dimension: [x, y, th, v, k]')
         else:
-            self.initialState = initalState
+            self.initialState = initialState
             self.finalState = finalState
-            self.k_C0 = initalState[4]
+            self.k_C0 = initialState[4]
             self.k_C4 = finalState[4]
 
     def setNominalCurvatures(self, kStart, kCenter, kEnd, reverse):
@@ -91,7 +93,7 @@ class SmoothPathPlanner:
             kInit: starting curvature of trajectory
             kFinal: final curvature of trajectory
         
-        Ouput:
+        Output:
             kTrajectory: np array of curvature values for ever timestep in trajectory 
         """
 
@@ -116,7 +118,7 @@ class SmoothPathPlanner:
             vInit: starting velocity of trajectory
             vFinal: final velocity of trajectory
         
-        Ouput:
+        Output:
             vTrajectory: np array of velocity values for ever timestep in trajectory
         """
 
@@ -138,7 +140,7 @@ class SmoothPathPlanner:
         Analytically solves the optimal trajectory problem to find the x trajectory which moves from x0 to xFinal in minimum time subject to arbitrary boundary constraints on the first and second derivative of x. Returns optimal trajectory as a 1xN numpy array of floats.
         
         Input:
-            x0: Intial state
+            x0: Initial state
             xFinal: Final state
             xDotMax: Upper bound on first derivative of x
             xDotMin: Lower bound on first derivative of x
@@ -225,13 +227,13 @@ class SmoothPathPlanner:
 
     def generateSpeedTrajectoryDDot(self, v0, vFinal):
         """
-        Helper function to call generateOptimalTrajectory and return a speed trajectory which has starting velcoity equal to vInit and final speed equal to vFinal.
+        Helper function to call generateOptimalTrajectory and return a speed trajectory which has starting velocity equal to vInit and final speed equal to vFinal.
         
         Input:
             v0: Initial speed
             vFinal: Final speed
 
-        Ouput:
+        Output:
             vTrajectory: 1xN numpy array of velocity values
         """
         xDotMax = self.vDotMax
@@ -251,9 +253,9 @@ class SmoothPathPlanner:
             fromStart: set to true if values will be cut or added to the front of the array, False if values are cut or added to end of the array
         
         Output: 
-            Ouput Dict:
+            Output Dict:
                 kTraj: return curvature trajectory
-                vTraj: return velcocity trajectory
+                vTraj: return velocity trajectory
                 cutV: bool value, true if the velocity trajectory was shortened by the operation
                 leftover: array of velocity values that was cut from input array, if cutV is False then this is a 2x1 array of either the first or last value of the input velocity array
         """
@@ -286,9 +288,9 @@ class SmoothPathPlanner:
 
     def calculateCenterLine(self):
         """
-        Uses equations (17) through (21) of paper to calcuate orientation of the center line.
+        Uses equations (17) through (21) of paper to calculate orientation of the center line.
 
-        Ouput:
+        Output:
             Phi: The direction of the center line represented as a radian value
         """
         S1 = self.S1.poses
@@ -476,18 +478,18 @@ class SmoothPathPlanner:
         """
         Central planner function for the object. Returns a path from start to end state that conforms to all constraints
         
-        Ouput:
+        Output:
             FullPath: Full Path object
         """
 
         if not hasattr(self, 'headlandSpeed'):
-            raise ValueError('setConstraints has not been called succesfully on this instance.')
+            raise ValueError('setConstraints has not been called successfully on this instance.')
 
         if not hasattr(self, 'initialState'):
-            raise ValueError('setStartAndGoal has not been called succesfully on this instance.')
+            raise ValueError('setStartAndGoal has not been called successfully on this instance.')
 
         if not hasattr(self, 'k_C1'):
-            raise ValueError('setNominalCurvatures has not been called succesfully on this instance.')
+            raise ValueError('setNominalCurvatures has not been called successfully on this instance.')
 
         self.path_is_not_feasible = True
 
@@ -649,7 +651,7 @@ class SmoothPathPlanner:
             
             self.C3 = CCSegment(self.k_C3, v_C3[min(self.vC3_index,len(v_C3)-1):len(v_C3)], self.S3.poses[-1], self.S4.poses[0], self.omega_kplus2, self.dT)
 
-            ################ Check Feasbility ################
+            ################ Check Feasibility ################
             self.path_is_not_feasible = False
 
             if np.abs(self.C1.angle) > 1.5*np.pi:
@@ -692,7 +694,7 @@ class SmoothPathPlanner:
         """
         Generic path planner which returns shortest path from start to goal.
 
-        Ouput:
+        Output:
             FullPath: Full Path object
         """
         RSR = [self.kMin, 0, self.kMin, False]
