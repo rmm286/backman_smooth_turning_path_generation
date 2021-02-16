@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 from numpy import sin, cos, tan
 import matplotlib.pyplot as plt
@@ -14,63 +15,52 @@ class PathSegment:
             x: x position of start or end pose (m)
             y: y position of start or end pose (m)
             wrtStart: perform operation wrt to the start point (bool)
-
          """
 
         index = 0 if wrtStart else -1
-
         thetaRotate = theta - self.poses[index][2]
         a = self.poses[index][0]
         b = self.poses[index][1]
-
         h =  x - a
         k = y - b
-
         homogenousCoords = self.poses.T * np.array([[1], [1], [0]]) + np.array([[0], [0], [1]])
-
         H = np.array([[cos(thetaRotate), -1*sin(thetaRotate), -1*a*cos(thetaRotate) + b*sin(thetaRotate) + a],
                       [sin(thetaRotate), cos(thetaRotate), -1*a*sin(thetaRotate) - b*cos(thetaRotate) + b], 
                       [0, 0, 1]])
         T = np.array([[1, 0, h],[ 0, 1, k], [0,0,1]])
-
         TxH = np.matmul(T,H)
-
         rotAndTranslatedPoints = np.matmul(TxH,homogenousCoords)
-
         #next line does a bunch of broadcasting to strip the ones from homogenous coords and add back the orientation values
         finalPath = rotAndTranslatedPoints * np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [thetaRotate]])
-
         self.poses = finalPath.T
     
     def rotateAboutPoint(self, a, b, theta):
         """ 
-        Rotates the path about a point [a,b] by theta radians.
+        Rotates the path about point [a,b] by theta radians.
 
         Input: 
-            
             a: x position of center of rotation (m)
             b: y position of center of rotation (m)
             theta: orientation of start or end pose (rad)
          """
 
         homogenousCoords = self.poses.T * np.array([[1], [1], [0]]) + np.array([[0], [0], [1]])
-
         H = np.array([[cos(theta), -1*sin(theta), -1*a*cos(theta) + b*sin(theta) + a],
                       [sin(theta), cos(theta), -1*a*sin(theta) - b*cos(theta) + b], 
                       [0, 0, 1]])
-
         rotatedPoints = np.matmul(H,homogenousCoords)
         finalPath = rotatedPoints* np.array([[1], [1], [0]]) + (self.poses.T * np.array([[0], [0], [1]])) + np.array([[0], [0], [theta]])
-
         self.poses = finalPath.T
     
     def pathIntersectsWith(self, otherPath):
         """
-        Function returns true if the two paths intersect. This is implemented as a simple bounding box, since paths shouldn't really get very close to each other.
+        Function returns true if the two paths intersect. This is implemented as a simple bounding box, since paths shouldn't really get very close to each other unless the intersect.
+
+        Input:
+            otherPath: second path for intersection testing.
 
         Output:
             intersects: True if paths intersect (bool)
-        
         """
         leftSideBox1 = np.amin(self.poses.T[0])
         rightSideBox1 = np.amax(self.poses.T[0])
@@ -86,6 +76,16 @@ class PathSegment:
 class SpiralSegment(PathSegment):
 
     def __init__(self, kTrajectory, vTrajectory, xo, dT):
+        """
+        Initialize a Spiral SEgment (S1, S2, S3, or S4) in paper.
+
+        Input:
+            kTrajectory: Array of curvature values for each timestep
+            vTrajectory: Array of velocity values for each timestep
+            xo: Inital pose of model, x[0] = x, x[1] = y, x[2] = theta (orientation)
+            dT: static timestep
+        """
+
         self.poses = self.integrateTrajectory(kTrajectory, vTrajectory, xo, dT)
         self.controls = np.vstack([vTrajectory,kTrajectory,]).T
     
@@ -136,14 +136,13 @@ class SpiralSegment(PathSegment):
         v = u[0]
         k = u[1]
         theta = x[2]
-
         return [v*cos(theta), v*sin(theta), k*v]
 
 class CCSegment(PathSegment):
 
     def __init__(self, curvature, vTraj, start, end, center, dT):
         """
-        Generates a constant curvature segment from start to end coordinates, with given curvature, center of rotation and speed profile. 
+        Generates a constant curvature segment from start to end coordinates (C1, or C3 from paper), with given curvature, center of rotation and speed profile. 
 
         Input: 
             curvature: curvature of constant arc (float)
@@ -157,23 +156,20 @@ class CCSegment(PathSegment):
         ang1 = np.arctan2(start[1]-center[1],start[0]-center[0])
         ang2 = np.arctan2(end[1]-center[1], end[0]-center[0])
         r = np.linalg.norm(start[0:2]-center)
-
+        
         if(curvature > 0 and ang2 < ang1):
             ang2 = ang2 + 2*np.pi
-        
+    
         if(curvature < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
 
         self.angle = ang2-ang1
-
         arcLen = r*np.abs(ang2-ang1)
         self.arcLen = arcLen
         maxTimeToTraverse = arcLen/np.amin(vTraj)
         maxStepsToTraverse = int(maxTimeToTraverse/dT) +1
-
         self.poses = np.zeros([maxStepsToTraverse+1,3])
         self.controls = np.zeros([maxStepsToTraverse,2])
-
         ang = ang1
         i = 0 #counter
         v_index = -1
@@ -184,10 +180,8 @@ class CCSegment(PathSegment):
 
             w = abs(vTraj[v_index])/r
             ang = ang + np.sign(curvature)*w*dT
-            
             self.poses[i] = np.array([center[0] + r*cos(ang), center[1] + r*sin(ang), ang + np.sign(curvature)*np.pi/2.0])
             self.controls[i] = np.array([vTraj[v_index], curvature])
-            
             i = i + 1
             
         self.v_index = v_index
@@ -226,14 +220,11 @@ class C2ArcSegment(PathSegment):
             ang2 = ang2 - 2*np.pi
 
         self.angle = ang2-ang1
-
         arcLen = r*np.abs(ang2-ang1)
         maxTimeToTraverse = arcLen/np.amin(np.abs(np.append(v1,v2))) #TODO: change this to average
         maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
-
         self.poses = np.zeros([maxStepsToTraverse,3])
         self.controls = np.zeros([maxStepsToTraverse,2])
-
         i = 0 #counter
         i1 = 0
         i2 = maxStepsToTraverse - 1
@@ -245,7 +236,6 @@ class C2ArcSegment(PathSegment):
             if i%2 == 0: #forward step
                 w = abs(v1[v_1_index])/r
                 ang1 = ang1 + reverse*np.sign(curvature)*w*dT
-                
                 self.poses[i1] = np.array([center[0] + r*cos(ang1), center[1] + r*sin(ang1), ang1 + np.sign(curvature)*np.pi/2.0])
                 self.controls[i1] = np.array([v1[v_1_index], curvature])
                 i = i + 1
@@ -256,10 +246,8 @@ class C2ArcSegment(PathSegment):
             else: #back step
                 w = abs(v2[v_2_index])/r
                 ang2 = ang2 + -1*reverse*np.sign(curvature)*w*dT
-                
                 self.poses[i2] = np.array([center[0] + r*cos(ang2), center[1] + r*sin(ang2), ang2 + np.sign(curvature)*np.pi/2.0])
                 self.controls[i2] = np.array([v2[v_2_index], curvature])
-                
                 i = i + 1
                 i2 = i2 - 1
                 if v_2_index > 0:
@@ -291,7 +279,7 @@ class C2LineSegment(PathSegment):
         self.controls = np.zeros([maxStepsToTraverse,2])
         pose1 = start
         pose2 = end
-        v_1_index = -1
+        v_1_index =  - 1
         v_2_index = len(v2)
         i = 0
         i1 = 0
@@ -326,7 +314,8 @@ class LineSegment(PathSegment):
 
     def __init__(self, vTraj, start, end, dT):
         """
-        Generates a line segment from start to end coordinates, with given direction, and speed profile. 
+        Generates a line segment from start to end coordinates, with given direction, and speed profile.
+        Unused in current implementation but left for possible future use.
 
         Input: 
             vTraj: velocity profile of constant arc segment (Nx2 array of floats)
@@ -359,6 +348,12 @@ class LineSegment(PathSegment):
 
 class FullPath(PathSegment):
     def __init__(self, *args):
+        """
+        Instantiate a final path object which contains all path elements of full path.
+
+        Input: 
+            args: series of sequential path segments passed in order to generate final path. 
+        """
 
         self.poses = args[1].poses
         self.controls = args[1].controls

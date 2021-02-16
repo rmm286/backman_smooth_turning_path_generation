@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
-
 import numpy as np
 from numpy import sin, cos, tan
-from StateSpaces import SmoothPathState
-from scipy.integrate import odeint
-from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment, FullPath
 
 class SmoothPathPlanner:
-    """ class for implementation of backman algorithm"""
+    """
+    Class for implementation of Smooth curvature path generating algorithm as described in Juha Backman's 2015 paper "Smooth Turning PathGeneration for Agricultural Vehicles in Headlands".   
+    """
 
     def __init__(self, dT):
         self.dT = dT
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
-        """ Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. """
+        """
+        Set constraints on K, Kdot, Kddot, V, Vdot, Vddot, speed in headland and reverse speed in headland. 
+
+        Input: 
+            kConstraints: constraints on curvature and derivatives [kMax, kMin, kDotMax, kDotMin, kDDotMax, kDDotMin]
+            vConstraints: constraints on velocity and derivatives [vMax, vMin, vDotMax, vDotMin, vDDotMax, vDDotMin]
+            headlandSpeed: Desired speed in headland
+            headlandSpeedReverse: Desired reverse speed in headland
+        """
 
         if headlandSpeed > vConstraints[0]:
             raise ValueError("Headland Speed should not be larger than V Max")
@@ -44,7 +50,13 @@ class SmoothPathPlanner:
         self.headlandSpeedReverse = headlandSpeedReverse
 
     def setStartAndGoal(self, initalState, finalState):
-        """ Set Start and Goal States, both states must be SmoothPathStates"""
+        """
+        Set Start and Goal States.
+
+        Input:
+            intialState: start state of vehicle [x, y, theta, v, k]
+            finalState: end or goal state of vehicle [x, y, theta, v, k]
+        """
 
         if not (len(initalState) == 5 and len(finalState) == 5):
             raise TypeError('Start and/or Goal not of correct dimension: [x, y, th, v, k]')
@@ -73,16 +85,19 @@ class SmoothPathPlanner:
     def generateCurvatureTrajectory(self, kInit, kFinal):
         """
         Generates a curvature trajectory which has starting curvature equal to kInit and final curvature equal to kFinal. Time values start form tInit and increment by self.dT
+        Uses Eqn. 4 from paper.
 
-        Eqn. 4 from paper.
-
-        TODO: implement kDDot constraints
+        Input:  
+            kInit: starting curvature of trajectory
+            kFinal: final curvature of trajectory
+        
+        Ouput:
+            kTrajectory: np array of curvature values for ever timestep in trajectory 
         """
 
         kTolerance = self.dT*max(np.abs(self.kDotMax),np.abs(self.kDotMin))
         k = kInit
         kTrajectory = np.array([k])
-
         while np.abs(k - kFinal) > kTolerance:
             if k < kFinal:
                 k = k + self.dT*self.kDotMax
@@ -95,8 +110,14 @@ class SmoothPathPlanner:
     def generateSpeedTrajectory(self, vInit, vFinal):
         """
         Generates a velocity trajectory which has starting velocity equal to vInit and final velocity equal to vFinal. Time values start form tInit and increment by self.dT
-
         Eqn. 7 from paper
+
+        Input:  
+            vInit: starting velocity of trajectory
+            vFinal: final velocity of trajectory
+        
+        Ouput:
+            vTrajectory: np array of velocity values for ever timestep in trajectory
         """
 
         vTolerance = self.dT*max(np.abs(self.vDotMax), np.abs(self.vDotMin))
@@ -114,9 +135,18 @@ class SmoothPathPlanner:
 
     def generateOptimalTrajectory(self, x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin):
         """
-        Analytically solves the optimal trajectory problem to find the x trajectory which moves from x0 to xFinal in minimum time subject to arbitrary boundary constraints on the first and second derivative of x.
-
-        Returns optimal trajectory as a 1xN numpy array of floats.
+        Analytically solves the optimal trajectory problem to find the x trajectory which moves from x0 to xFinal in minimum time subject to arbitrary boundary constraints on the first and second derivative of x. Returns optimal trajectory as a 1xN numpy array of floats.
+        
+        Input:
+            x0: Intial state
+            xFinal: Final state
+            xDotMax: Upper bound on first derivative of x
+            xDotMin: Lower bound on first derivative of x
+            xDDotMax: Upper bound on second derivative of x
+            xDDotMin: Lower bound on second derivative of x (This value must be negative)
+        
+        Output:
+            trajectory: Nx1 np array of x values for every timestep.
         """
 
         dT = self.dT
@@ -174,34 +204,60 @@ class SmoothPathPlanner:
         
         return xTrajectory
 
-    def generateCurvatureTrajectoryDDot(self, x0, xFinal):
+    def generateCurvatureTrajectoryDDot(self, k0, kFinal):
         """
         Helper function to call generateOptimalTrajectory and return a trajectory with curvature equal to kInit and final curvature equal to kFinal.
-
         This function differs from generateCurvatureTrajectoryDDot in that it produces a transition which is both continuous and differentiable, and respects kDDot constraints.
+        
+        Input:
+            k0: Initial curvature
+            kFinal: Final curvature
+        
+        Output:
+            kTrajectory: 1xN numpy array of curvature values for each timestep
         """
         xDotMax = self.kDotMax
         xDotMin = self.kDotMin
         xDDotMax = self.kDDotMax
         xDDotMin = self.kDDotMin
         
-        return self.generateOptimalTrajectory(x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
+        return self.generateOptimalTrajectory(k0, kFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
 
-    def generateSpeedTrajectoryDDot(self, x0, xFinal):
+    def generateSpeedTrajectoryDDot(self, v0, vFinal):
         """
         Helper function to call generateOptimalTrajectory and return a speed trajectory which has starting velcoity equal to vInit and final speed equal to vFinal.
+        
+        Input:
+            v0: Initial speed
+            vFinal: Final speed
+
+        Ouput:
+            vTrajectory: 1xN numpy array of velocity values
         """
         xDotMax = self.vDotMax
         xDotMin = self.vDotMin
         xDDotMax = self.vDDotMax
         xDDotMin = self.vDDotMin
 
-        return self.generateOptimalTrajectory(x0, xFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
+        return self.generateOptimalTrajectory(v0, vFinal, xDotMax, xDotMin, xDDotMax, xDDotMin)
 
     def makeTrajectoriesEqualLength(self, kTrajIn, vTrajIn, fromStart=False):
         """
         Takes curvature and velocity trajectories and makes them the same length. Either cutting vTraj from the start or end, or by adding values to the start or end of vTraj.
+        
+        Input:
+            kTrajIn: Input curvature trajectory
+            vTrajIn: input velocity trajectory
+            fromStart: set to true if values will be cut or added to the front of the array, False if values are cut or added to end of the array
+        
+        Output: 
+            Ouput Dict:
+                kTraj: return curvature trajectory
+                vTraj: return velcocity trajectory
+                cutV: bool value, true if the velocity trajectory was shortened by the operation
+                leftover: array of velocity values that was cut from input array, if cutV is False then this is a 2x1 array of either the first or last value of the input velocity array
         """
+
         cutV = False
         if (len(kTrajIn) < len(vTrajIn)) and not fromStart:  # cut from end of vTraj
             vTraj = vTrajIn[0:len(kTrajIn)]
@@ -231,6 +287,9 @@ class SmoothPathPlanner:
     def calculateCenterLine(self):
         """
         Uses equations (17) through (21) of paper to calcuate orientation of the center line.
+
+        Ouput:
+            Phi: The direction of the center line represented as a radian value
         """
         S1 = self.S1.poses
         S2 = self.S2.poses
@@ -311,6 +370,16 @@ class SmoothPathPlanner:
         return self.omega_kplus1
 
     def plotPaths(self, plotCircles = False, plotArrows = False):
+        """
+        Plots all segments of the paths. Can optionally plot the turning circles of constant curvature segments and orientation data.
+
+        Input:
+            plotCircles (optional): True if constant curvature circles are to be plotted
+            plotArrows (optional): True if orientation data are to be plotted
+        
+        Output:
+            Saves plot to file "trajectory.png"
+        """
 
         plt.figure(0)
         plt.clf()
@@ -318,13 +387,20 @@ class SmoothPathPlanner:
         plt.xlabel("x (m)")
         plt.ylabel("y (m)")
         
-        plt.plot([i[0] for i in self.S1.poses], [i[1] for i in self.S1.poses])
-        plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
-        plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
-        plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
-        plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
-        plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
-        plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
+        if hasattr(self, 'S1'):
+            plt.plot([i[0] for i in self.S1.poses], [i[1] for i in self.S1.poses])
+        if hasattr(self, 'S2'):    
+            plt.plot([i[0] for i in self.S2.poses], [i[1] for i in self.S2.poses])
+        if hasattr(self, 'S3'):
+            plt.plot([i[0] for i in self.S3.poses], [i[1] for i in self.S3.poses])
+        if hasattr(self, 'S4'):
+            plt.plot([i[0] for i in self.S4.poses], [i[1] for i in self.S4.poses])
+        if hasattr(self, 'C1'):
+            plt.plot([i[0] for i in self.C1.poses], [i[1] for i in self.C1.poses])
+        if hasattr(self, 'C2'):
+            plt.plot([i[0] for i in self.C2.poses], [i[1] for i in self.C2.poses])
+        if hasattr(self, 'C3'):
+            plt.plot([i[0] for i in self.C3.poses], [i[1] for i in self.C3.poses])
 
         if plotCircles: 
             plt.plot(self.omega_k[0], self.omega_k[1], 'b^')
@@ -350,7 +426,12 @@ class SmoothPathPlanner:
         plt.savefig("trajectory.png")
 
     def plotControls(self):
+        """
+        Plots all control inputs for each segment. Can only be called once full path has been created.
 
+        Output:
+            Saves to two files "velProfile.png" and "kProfile.png"
+        """
         plt.figure(1)
         plt.clf()
         plt.title("Speed Profile")
@@ -393,8 +474,20 @@ class SmoothPathPlanner:
 
     def plan(self):
         """
-        Central planner function for the object. Returns a path.
+        Central planner function for the object. Returns a path from start to end state that conforms to all constraints
+        
+        Ouput:
+            FullPath: Full Path object
         """
+
+        if not hasattr(self, 'headlandSpeed'):
+            raise ValueError('setConstraints has not been called succesfully on this instance.')
+
+        if not hasattr(self, 'initialState'):
+            raise ValueError('setStartAndGoal has not been called succesfully on this instance.')
+
+        if not hasattr(self, 'k_C1'):
+            raise ValueError('setNominalCurvatures has not been called succesfully on this instance.')
 
         self.path_is_not_feasible = True
 
@@ -596,6 +689,12 @@ class SmoothPathPlanner:
         return FullPath(self.dT, self.S1, self.C1, self.S2, self.C2, self.S3, self.C3, self.S4)
 
     def planShortest(self):
+        """
+        Generic path planner which returns shorest path from start to goal.
+
+        Ouput:
+            FullPath: Full Path object
+        """
         RSR = [self.kMin, 0, self.kMin, False]
         LSL = [self.kMax, 0, self.kMax, False]
         LRL = [self.kMax, self.kMin, self.kMax, False]
@@ -630,19 +729,14 @@ def main():
     finalState = [20, 0.0, -0.5*np.pi, 0.8, 0]
     L_w = 1.0
     gamma_max = np.pi/4.0
-    
-    turningRadius = L_w/tan(gamma_max)  # =L_w/tan(gamma_max)
+    turningRadius = L_w/tan(gamma_max)  # = L_w/tan(gamma_max)
     dT = 0.005
-
     kMax = 1/turningRadius
     kMin = -kMax
     kDotMax = 5.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
     kDDotMax = 5.0
     kDDotMin = -5.0
-
-    kConstraints = [kMax, kMin, kDotMax, kDotMin, kDDotMax, kDDotMin]
-
     vMax = 1.0
     vMin = -vMax
     vDotMax = 1.0
@@ -653,6 +747,7 @@ def main():
     headlandSpeedReverse = vMin
 
     vConstraints = [vMax, vMin, vDotMax, vDotMin, vDDotMax, vDDotMin]
+    kConstraints = [kMax, kMin, kDotMax, kDotMin, kDDotMax, kDDotMin]
 
     planSmoothInst = SmoothPathPlanner(dT)
     planSmoothInst.setConstraints(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
@@ -670,16 +765,8 @@ def main():
     print("Shortest Path has a final time of: ", shortestPath.finalTime)
 
 main()
-# TODO: don't use scipy integrator, write own rungekutta
 # Document
-# Optional:Get rid of SmoothPathStates and StateSpaces.py
-# put in edge cases for feasibility checking -> RSR LSL cases
-# implement fix for v_C3index problem (or verify that current solution is good)
 # make variable names consistent
 # make spacing consistent
 # make sure tolerances make sense, maybe pass tolerances as parameters
 # get timeseries data in all paths
-
-# TESTING: figure out how to trigger all feasibility checks and see if they function properly
-# Try with very low accelerations
-# try all turning types
