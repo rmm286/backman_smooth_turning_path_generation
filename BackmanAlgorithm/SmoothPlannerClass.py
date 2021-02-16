@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import sin, cos, tan
 import matplotlib.pyplot as plt
-from PathSegment import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment, FullPath
+from PathSegmentClass import SpiralSegment, CCSegment, LineSegment, C2ArcSegment, C2LineSegment, FullPath
 
 class SmoothPathPlanner:
     """
