@@ -654,7 +654,7 @@ class SmoothPathPlanner:
             ################ Check Feasibility ################
             self.path_is_not_feasible = False
 
-            if np.abs(self.C1.angle) > 1.5*np.pi:
+            if np.abs(self.C1.angle) > 1.8*np.pi:
                 self.k_C1 = self.k_C1 - np.sign(self.k_C1)*0.1*self.kMax
                 if np.abs(self.k_C1) < 10**-10:
                     return 0
@@ -662,7 +662,7 @@ class SmoothPathPlanner:
                 self.path_is_not_feasible = True
                 continue
 
-            if np.abs(self.C3.angle) > 1.5*np.pi:
+            if np.abs(self.C3.angle) > 1.8*np.pi:
                 self.k_C3 = self.k_C3 - np.sign(self.k_C3)*0.1*self.kMax
                 if np.abs(self.k_C3) <= 10**-10:
                     return 0 
@@ -723,7 +723,4 @@ class SmoothPathPlanner:
                 shortestPathFinalTime = path.finalTime
 
         return shortestPath
-
-# make variable names consistent
-# make spacing consistent
-# make sure tolerances make sense, maybe pass tolerances as parameters
+# TODO: make sure tolerances make sense, maybe pass tolerances as parameters
