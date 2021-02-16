@@ -72,14 +72,14 @@ class PathSegment:
             intersects: True if paths intersect (bool)
         
         """
-        leftSideBox1 = np.amin(np.array([i[0] for i in self.poses]))
-        rightSideBox1 = np.amax(np.array([i[0] for i in self.poses]))
-        leftSideBox2 = np.amin(np.array([i[0] for i in otherPath.poses]))
-        rightSideBox2 = np.amax(np.array([i[0] for i in otherPath.poses]))
-        bottomSideBox1 = np.amin(np.array([i[1] for i in self.poses]))
-        topSideBox1 = np.amax(np.array([i[1] for i in self.poses]))
-        bottomSideBox2 = np.amin(np.array([i[1] for i in otherPath.poses]))
-        topSideBox2 = np.amax(np.array([i[1] for i in otherPath.poses]))
+        leftSideBox1 = np.amin(self.poses.T[0])
+        rightSideBox1 = np.amax(self.poses.T[0])
+        leftSideBox2 = np.amin(otherPath.poses.T[0])
+        rightSideBox2 = np.amax(otherPath.poses.T[0])
+        bottomSideBox1 = np.amin(self.poses.T[1])
+        topSideBox1 = np.amax(self.poses.T[1])
+        bottomSideBox2 = np.amin(otherPath.poses.T[1])
+        topSideBox2 = np.amax(otherPath.poses.T[1])
 
         return not (rightSideBox1 < leftSideBox2 or leftSideBox1 > rightSideBox2 or topSideBox1 < bottomSideBox2 or bottomSideBox1 > topSideBox2)           
 
@@ -176,9 +176,12 @@ class CCSegment(PathSegment):
 
         ang = ang1
         i = 0 #counter
-        v_index = 0
+        v_index = -1
 
         while np.sign(curvature)*(ang - ang2) <= 0:
+            if v_index < len(vTraj) - 1:
+                v_index = v_index + 1
+
             w = abs(vTraj[v_index])/r
             ang = ang + np.sign(curvature)*w*dT
             
@@ -186,8 +189,7 @@ class CCSegment(PathSegment):
             self.controls[i] = np.array([vTraj[v_index], curvature])
             
             i = i + 1
-            if v_index < len(vTraj) - 1:
-                v_index = v_index + 1
+            
         self.v_index = v_index
         self.poses = self.poses[0:i] #trim excess
         self.controls = self.controls[0:i] #trim excess
@@ -215,13 +217,11 @@ class C2ArcSegment(PathSegment):
             reverse = -1
         else:
             reverse = 1
-            
-        r = np.linalg.norm(start[0:2]-center)
 
+        r = np.linalg.norm(start[0:2]-center)
 
         if(curvature*reverse > 0 and ang2 < ang1):
             ang2 = ang2 + 2*np.pi
-        
         if(curvature*reverse < 0 and ang2 > ang1):
             ang2 = ang2 - 2*np.pi
 
@@ -248,7 +248,6 @@ class C2ArcSegment(PathSegment):
                 
                 self.poses[i1] = np.array([center[0] + r*cos(ang1), center[1] + r*sin(ang1), ang1 + np.sign(curvature)*np.pi/2.0])
                 self.controls[i1] = np.array([v1[v_1_index], curvature])
-                
                 i = i + 1
                 i1 = i1 + 1
                 if v_1_index < len(v1) - 1:
@@ -275,6 +274,7 @@ class C2LineSegment(PathSegment):
         """
         Generates the center C2 segment from start to end coordinates, with given curvature, center of rotation and speed profile. 
 
+        The speed profile is provided as two arrays, VC21, VC22. The algorithm builds the arrays alternating between forward iteration from the start point to backward iteration from the end. Once either speed profile is exhusted, the algorith continues building in the middle with the last value of speed. 
         Input: 
             curvature: curvature of constant arc (float)
             v1: velocity profile of V_C21 arc segment (array of floats)
@@ -287,42 +287,37 @@ class C2LineSegment(PathSegment):
         segmentLength = np.linalg.norm(end[0:2]-start[0:2])
         maxTimeToTraverse = segmentLength/np.amin(np.append(v1,v2))
         maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
-
         self.poses = np.zeros([maxStepsToTraverse,3])
         self.controls = np.zeros([maxStepsToTraverse,2])
-
         pose1 = start
         pose2 = end
-        v_1_index = 0
-        v_2_index = len(v2) - 1
+        v_1_index = -1
+        v_2_index = len(v2)
         i = 0
         i1 = 0
         i2 = maxStepsToTraverse - 1
-
         dirVec = (end[0:2]-start[0:2])/segmentLength
         tolerance = (dT*np.amax(np.append(v1,v2)))
 
         while np.linalg.norm(pose2[0:2] - pose1[0:2]) > tolerance:
 
             if i%2 == 0: #fwd
+                if v_1_index < len(v1) - 1:
+                    v_1_index = v_1_index + 1
                 pose1 = np.append(pose1[0:2] + np.array(dirVec*v1[v_1_index]*dT), start[2])
                 self.poses[i1] = pose1
                 self.controls[i1] = np.array([v1[v_1_index], 0.0])
-
                 i = i + 1
                 i1 = i1 + 1
-                if v_1_index < len(v1) - 1:
-                    v_1_index = v_1_index + 1
-
+                
             else: #back step
+                if v_2_index > 0:
+                    v_2_index = v_2_index - 1
                 pose2 = np.append(pose2[0:2] - np.array(dirVec*v2[v_2_index]*dT), start[2])
                 self.poses[i2] = pose2
                 self.controls[i2] = np.array([v2[v_2_index], 0.0])
-                
                 i = i + 1
                 i2 = i2 - 1
-                if v_2_index > 0:
-                    v_2_index = v_2_index - 1
         
         self.poses = np.append(self.poses[0:i1], self.poses[i2+1:len(self.poses)], axis = 0) #trim excess
         self.controls = np.append(self.controls[0:i1], self.controls[i2+1:len(self.controls)], axis = 0) #trim excess
@@ -343,27 +338,21 @@ class LineSegment(PathSegment):
         segmentLength = np.linalg.norm(end[0:2]-start[0:2])
         maxTimeToTraverse = segmentLength/np.amin(vTraj)
         maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
-
         self.poses = np.zeros([maxStepsToTraverse,3])
         self.controls = np.zeros([maxStepsToTraverse,2])
-
         pose = start
-        v_index = 0
+        v_index = -1
         i = 0
-
         dirVec = (end[0:2]-start[0:2])/segmentLength
         tolerance = (dT*np.amax(vTraj))
 
         while np.linalg.norm(end[0:2] - pose[0:2]) > tolerance:
-            
-            pose = np.append(pose[0:2] + np.array(dirVec*vTraj[v_index]*dT), start[2]) 
-    
-            self.poses[i] = pose
-            self.controls[i] = np.array([vTraj[v_index], 0.0])
-
-            i = i + 1
             if v_index < len(vTraj) - 1:
                 v_index = v_index + 1
+            pose = np.append(pose[0:2] + np.array(dirVec*vTraj[v_index]*dT), start[2]) 
+            self.poses[i] = pose
+            self.controls[i] = np.array([vTraj[v_index], 0.0])
+            i = i + 1
 
         self.poses = self.poses[0:i] #trim excess
         self.controls = self.controls[0:i] #trim excess
