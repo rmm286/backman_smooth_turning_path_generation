@@ -48,4 +48,14 @@ Thumbs.db
 *.mov
 *.wmv
 
+# PNG files produced by class
+*.png
+
+# unit Test File
+UnitTests.py
+
+#config files
+.vs/
+.vscode/
+
 *.opendb
