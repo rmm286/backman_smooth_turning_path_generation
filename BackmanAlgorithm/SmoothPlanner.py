@@ -23,34 +23,36 @@ class SmoothPathPlanner:
         if headlandSpeedReverse > vConstraints[1]:
             raise ValueError("Headland Speed in reverse should not be smaller than V Min")
 
-        self.kMax = kConstraints[0]
-        self.kMin = kConstraints[1]
-        self.kDotMax = kConstraints[2]
-        self.kDotMin = kConstraints[3]
-        self.kDDotMax = kConstraints[4]
-        self.kDDotMin = kConstraints[5]
+        if not (len(kConstraints) == 6 and len(vConstraints) == 6):
+            raise TypeError('kConstraintsand/or vConstraints not of correct dimension.')
+        else:
+            self.kMax = kConstraints[0]
+            self.kMin = kConstraints[1]
+            self.kDotMax = kConstraints[2]
+            self.kDotMin = kConstraints[3]
+            self.kDDotMax = kConstraints[4]
+            self.kDDotMin = kConstraints[5]
 
-        self.vMax = vConstraints[0]
-        self.vMin = vConstraints[1]
-        self.vDotMax = vConstraints[2]
-        self.vDotMin = vConstraints[3]
-        self.vDDotMax = vConstraints[4]
-        self.vDDotMin = vConstraints[5]
+            self.vMax = vConstraints[0]
+            self.vMin = vConstraints[1]
+            self.vDotMax = vConstraints[2]
+            self.vDotMin = vConstraints[3]
+            self.vDDotMax = vConstraints[4]
+            self.vDDotMin = vConstraints[5]
 
         self.headlandSpeed = headlandSpeed
         self.headlandSpeedReverse = headlandSpeedReverse
 
-
     def setStartAndGoal(self, initalState, finalState):
         """ Set Start and Goal States, both states must be SmoothPathStates"""
 
-        if not (isinstance(initalState, SmoothPathState) and isinstance(initalState, SmoothPathState)):
-            raise TypeError('Start and Goal not SmoothPathStates')
+        if not (len(initalState) == 5 and len(finalState) == 5):
+            raise TypeError('Start and/or Goal not of correct dimension: [x, y, th, v, k]')
         else:
             self.initialState = initalState
             self.finalState = finalState
-            self.k_C0 = initalState.k
-            self.k_C4 = finalState.k
+            self.k_C0 = initalState[4]
+            self.k_C4 = finalState[4]
 
     def setNominalCurvatures(self, kStart, kCenter, kEnd, reverse):
         """ 
@@ -402,16 +404,16 @@ class SmoothPathPlanner:
             K_S1 = self.generateCurvatureTrajectoryDDot(
                 self.k_C0, self.k_C1)
             v_S1 = self.generateSpeedTrajectoryDDot(
-                self.initialState.v, self.headlandSpeed)
+                self.initialState[3], self.headlandSpeed)
             trajectories = self.makeTrajectoriesEqualLength(K_S1, v_S1, False)
             self.cut_v_S1 = trajectories['cutV']
             v_C1 = trajectories['leftover']
-            xo = [self.initialState.x, self.initialState.y,self.initialState.theta]
+            xo = [self.initialState[0], self.initialState[1],self.initialState[2]]
             self.S1 = SpiralSegment(trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
             
             ################ generate last connecting spiral ################
             K_S4 = self.generateCurvatureTrajectoryDDot(self.k_C3, self.k_C4)
-            v_S4 = self.generateSpeedTrajectoryDDot(self.headlandSpeed, self.finalState.v)
+            v_S4 = self.generateSpeedTrajectoryDDot(self.headlandSpeed, self.finalState[3])
             trajectories = self.makeTrajectoriesEqualLength(K_S4, v_S4, True)
             self.cut_v_S4 = trajectories['cutV']
             v_C3 = trajectories['leftover']
@@ -419,7 +421,7 @@ class SmoothPathPlanner:
             self.S4 = SpiralSegment(
                 trajectories['kTraj'], trajectories['vTraj'], xo, self.dT)
 
-            self.S4.placePath(self.finalState.x, self.finalState.y, self.finalState.theta, False)
+            self.S4.placePath(self.finalState[0], self.finalState[1], self.finalState[2], False)
 
             ################ generate second connecting spiral ################
             
@@ -593,7 +595,7 @@ class SmoothPathPlanner:
 
         return FullPath(self.dT, self.S1, self.C1, self.S2, self.C2, self.S3, self.C3, self.S4)
 
-    def planShortest(self, displayLevel = 0):
+    def planShortest(self):
         RSR = [self.kMin, 0, self.kMin, False]
         LSL = [self.kMax, 0, self.kMax, False]
         LRL = [self.kMax, self.kMin, self.kMax, False]
@@ -624,8 +626,8 @@ class SmoothPathPlanner:
 def main():
 
     # x pos., ypos., orientation, speed, curvature
-    initialState = SmoothPathState(0.0, 0.0, 0.5*np.pi, 0.8, 0)
-    finalState = SmoothPathState(20, 0.0, -0.5*np.pi, 0.8, 0)
+    initialState = [0.0, 0.0, 0.5*np.pi, 0.8, 0]
+    finalState = [20, 0.0, -0.5*np.pi, 0.8, 0]
     L_w = 1.0
     gamma_max = np.pi/4.0
     
@@ -636,8 +638,8 @@ def main():
     kMin = -kMax
     kDotMax = 5.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
-    kDDotMax = 1.0
-    kDDotMin = -1.0
+    kDDotMax = 5.0
+    kDDotMin = -5.0
 
     kConstraints = [kMax, kMin, kDotMax, kDotMin, kDDotMax, kDDotMin]
 
@@ -645,8 +647,8 @@ def main():
     vMin = -vMax
     vDotMax = 1.0
     vDotMin = -vDotMax
-    vDDotMax = 1.0
-    vDDotMin = -1.0
+    vDDotMax = 5.0
+    vDDotMin = -5.0
     headlandSpeed = vMax
     headlandSpeedReverse = vMin
 
