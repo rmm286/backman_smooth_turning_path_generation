@@ -2,6 +2,7 @@ from SmoothPlannerClass import SmoothPathPlanner
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import sin, cos, tan
+import time
 
 def main():
 
@@ -34,7 +35,9 @@ def main():
     planSmoothInst.setConstraints(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
     planSmoothInst.setStartAndGoal(initialState, finalState)
 
+    t = time.time()
     shortestPath = planSmoothInst.planShortest()
+    elapsed = time.time() - t
     
     plt.figure(3)
     plt.clf()
@@ -43,6 +46,7 @@ def main():
     plt.annotate(text, [0, 0])
     plt.plot([i[0] for i in shortestPath.poses], [i[1] for i in shortestPath.poses])
     plt.savefig("finalPath.png")
-    print("Shortest Path has a final time of: ", shortestPath.finalTime)
+    print("Shortest path has a final time of: ", shortestPath.finalTime)
+    print("Time to calculate final path: ", elapsed)
 
 main()
