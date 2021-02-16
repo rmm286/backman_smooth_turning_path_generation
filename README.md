@@ -1,4 +1,4 @@
-# Smooth and Differentiable Curvature Path Planner
+# Continuous and Differentiable Path Planner
 
 * Author: Rayne Milner
 * Maintainer: Rayne Milner
@@ -29,6 +29,7 @@ Usage only requires one import command `from SmoothPlannerClass import SmoothPat
 ## Usage
 
 ***
+
 The planner can be used as a generic planner to find the shortest path between two states with elements: [x, y, theta, velocity, curvature].
 
 The typical sequence of commands to call the planner method is as follows:
@@ -40,6 +41,13 @@ The typical sequence of commands to call the planner method is as follows:
 
 The returned path then has member data which contains the sequence of states from start to goal as well as controls.
 
+A few other functionalities are provided by the class:
+
+* If the user desired to plot a path with a specific turning type instead of the shortest path of any type, the user can choose to specify the path parameters with `setNominalCurvatures` and then instead of calling `planShortest()` call `plan()` 
+
+* The path can be plotted using `plotPath()`
+
+* Control inputs can be plotted with `plotControls()` once the final path has been returned (plan or planShortest has been called).
 
 ## External Links
 
