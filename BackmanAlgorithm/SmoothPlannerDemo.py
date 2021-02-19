@@ -7,24 +7,25 @@ import time
 def main():
 
     # x pos., ypos., orientation, speed, curvature
-    initialState = [0.0, 0.0, 0.5*np.pi, 0.8, 0]
-    finalState = [20, 0.0, -0.5*np.pi, 0.8, 0]
+    initialState = [0.0, 0.0, 0.5*np.pi, 1, 0]
+    finalState = [1.0, 0.0, -0.5*np.pi, 1, 0]
     L_w = 1.0
     gamma_max = np.pi/4.0
     turningRadius = L_w/tan(gamma_max)
     dT = 0.005
-    kMax = 1/turningRadius
-    kMin = -kMax
-    kDotMax = 5.0  # max derivative of curvature
+
+    kMax = 0.785
+    kMin = -0.785
+    kDotMax = 2.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
-    kDDotMax = 5.0
-    kDDotMin = -5.0
+    kDDotMax = 3.0
+    kDDotMin = -3.0
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 1.0
+    vDotMax = 2.0
     vDotMin = -vDotMax
-    vDDotMax = 5.0
-    vDDotMin = -5.0
+    vDDotMax = 3.0
+    vDDotMin = -3.0
     headlandSpeed = vMax
     headlandSpeedReverse = vMin
 
@@ -38,6 +39,14 @@ def main():
     t = time.time()
     shortestPath = planSmoothInst.planShortest()
     elapsed = time.time() - t
+
+    # t = time.time()
+    # planSmoothInst.setNominalCurvatures(kMin, kMax, kMin, True)
+    # shortestPath = planSmoothInst.plan()
+    # elapsed = time.time() - t
+
+    planSmoothInst.plotPaths()
+    planSmoothInst.plotControls()
     
     plt.figure(3)
     plt.clf()

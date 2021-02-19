@@ -22,6 +22,7 @@ This Path planning algorithm is a procedure for generating a path from start to 
 ## Installation
 
 ***
+
 Files are ready for use on download.
 
 Usage only requires one import command `from SmoothPlannerClass import SmoothPathPlanner`.

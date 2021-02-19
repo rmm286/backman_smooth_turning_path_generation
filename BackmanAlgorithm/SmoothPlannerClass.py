@@ -12,6 +12,9 @@ class SmoothPathPlanner:
     """
 
     def __init__(self, dT):
+        if dT > 0.05:
+            print("Warning: dT is larger than 0.05s, path may be discontinuous")
+        
         self.dT = dT
 
     def setConstraints(self, kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse):
@@ -162,19 +165,19 @@ class SmoothPathPlanner:
             if xFT < xFinal:
                 diff = xFinal - xFT
                 tTop = diff/xDotMax
-                t = np.linspace(0,riseTime,int(riseTime/dT))
+                t = np.linspace(0,riseTime,int(np.ceil(riseTime/dT)))
                 x0toRT = x0 + (xDDotMax/2.0)*t**2
-                t = np.linspace(dT, tTop, int(tTop/dT))
+                t = np.linspace(dT, tTop, int(np.ceil(tTop/dT)))
                 xRTtoDiff = x0toRT[-1] + xDDotMax*riseTime*t
-                t = np.linspace(dT,fallTime,int(fallTime/dT))
+                t = np.linspace(dT,fallTime,int(np.ceil(fallTime/dT)))
                 xDifftoFT = xRTtoDiff[-1] + xDDotMax*riseTime*t + 0.5*xDDotMin*t**2
                 xTrajectory = np.append(x0toRT,np.append(xRTtoDiff,xDifftoFT,axis=0),axis=0)
             else:
                 t1 = np.sqrt((xFinal - x0)/((xDDotMax/2.0)*(1-xDDotMax/xDDotMin)))
                 t2 = -1*(xDDotMax/xDDotMin)*t1
-                t = np.linspace(0,t1,int(t1/dT))
+                t = np.linspace(0,t1,int(np.ceil(t1/dT)))
                 x0tot1 = x0 + xDDotMax/2.0*t**2
-                t = np.linspace(dT,t2,int(t2/dT))
+                t = np.linspace(dT,t2,int(np.ceil(t2/dT)))
                 xt1tot2 = x0tot1[-1] + (xDDotMax*t1)*t + (xDDotMin/2.0)*t**2
                 xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
         elif x0 > xFinal: #decrease x to xf
@@ -186,19 +189,19 @@ class SmoothPathPlanner:
             if xRT > xFinal:
                 diff = xFinal - xRT
                 tBottom = diff/xDotMin
-                t = np.linspace(0,fallTime,int(fallTime/dT))
+                t = np.linspace(0,fallTime,int(np.ceil(fallTime/dT)))
                 x0toFT = x0 + (xDDotMin/2.0)*t**2
-                t = np.linspace(dT, tBottom, int(tBottom/dT))
+                t = np.linspace(dT, tBottom, int(np.ceil(tBottom/dT)))
                 xFTtoDiff = x0toFT[-1] + xDDotMin*fallTime*t
-                t = np.linspace(dT,riseTime,int(riseTime/dT))
+                t = np.linspace(dT,riseTime,int(np.ceil(riseTime/dT)))
                 xDifftoRT = xFTtoDiff[-1] + xDDotMin*fallTime*t + 0.5*xDDotMax*t**2
                 xTrajectory = np.append(x0toFT,np.append(xFTtoDiff,xDifftoRT,axis=0),axis=0)
             else:
                 t1 = np.sqrt((xFinal - x0)/((xDDotMin/2.0)*(1-xDDotMin/xDDotMax)))
                 t2 = -1*(xDDotMin/xDDotMax)*t1
-                t = np.linspace(0,t1,int(t1/dT))
+                t = np.linspace(0,t1,int(np.ceil(t1/dT)))
                 x0tot1 = x0 + xDDotMin/2.0*t**2
-                t = np.linspace(dT,t2,int(t2/dT))
+                t = np.linspace(dT,t2,int(np.ceil(t2/dT)))
                 xt1tot2 = x0tot1[-1] + (xDDotMin*t1)*t + (xDDotMax/2.0)*t**2
                 xTrajectory = np.append(x0tot1,xt1tot2,axis=0)
         else: #x0 = xFinal
@@ -419,11 +422,27 @@ class SmoothPathPlanner:
             plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
         
         if plotArrows:
-            for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
-                plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
-            
-            for i in range(0, len(self.S4.poses), int(len(self.S2.poses)/10)):
-                plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'S1'):
+                for i in range(0, len(self.S1.poses), int(len(self.S1.poses)/10)):
+                    plt.arrow(self.S1.poses[i][0], self.S1.poses[i][1], 0.1*cos(self.S1.poses[i][2]), 0.1*sin(self.S1.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'S2'):    
+                for i in range(0, len(self.S2.poses), int(len(self.S2.poses)/10)):
+                    plt.arrow(self.S2.poses[i][0], self.S2.poses[i][1], 0.1*cos(self.S2.poses[i][2]), 0.1*sin(self.S2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'S3'):
+                for i in range(0, len(self.S3.poses), int(len(self.S3.poses)/10)):
+                    plt.arrow(self.S3.poses[i][0], self.S3.poses[i][1], 0.1*cos(self.S3.poses[i][2]), 0.1*sin(self.S3.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'S4'):
+                for i in range(0, len(self.S4.poses), int(len(self.S4.poses)/10)):
+                    plt.arrow(self.S4.poses[i][0], self.S4.poses[i][1], 0.1*cos(self.S4.poses[i][2]), 0.1*sin(self.S4.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'C1'):
+                for i in range(0, len(self.C1.poses), int(len(self.C1.poses)/10)):
+                    plt.arrow(self.C1.poses[i][0], self.C1.poses[i][1], 0.1*cos(self.C1.poses[i][2]), 0.1*sin(self.C1.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'C2'):
+                for i in range(0, len(self.C2.poses), int(len(self.C2.poses)/10)):
+                    plt.arrow(self.C2.poses[i][0], self.C2.poses[i][1], 0.1*cos(self.C2.poses[i][2]), 0.1*sin(self.C2.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)
+            if hasattr(self, 'C3'):
+                for i in range(0, len(self.C3.poses), int(len(self.C3.poses)/10)):
+                    plt.arrow(self.C3.poses[i][0], self.C3.poses[i][1], 0.1*cos(self.C3.poses[i][2]), 0.1*sin(self.C3.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)            
 
         plt.savefig("trajectory.png")
 
