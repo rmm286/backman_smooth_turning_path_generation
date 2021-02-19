@@ -14,18 +14,18 @@ def main():
     turningRadius = L_w/tan(gamma_max)
     dT = 0.005
 
-    kMax = 0.785
-    kMin = -0.785
+    kMax = 0.785 
+    kMin = -0.2
     kDotMax = 2.0  # max derivative of curvature
     kDotMin = -kDotMax  # min derivative of curvature
     kDDotMax = 3.0
-    kDDotMin = -3.0
+    kDDotMin = -2.0
     vMax = 1.0
     vMin = -vMax
-    vDotMax = 2.0
-    vDotMin = -vDotMax
+    vDotMax = 1.0
+    vDotMin = -2.0
     vDDotMax = 3.0
-    vDDotMin = -3.0
+    vDDotMin = -2.0
     headlandSpeed = vMax
     headlandSpeedReverse = vMin
 

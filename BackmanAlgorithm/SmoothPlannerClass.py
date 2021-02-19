@@ -13,7 +13,7 @@ class SmoothPathPlanner:
 
     def __init__(self, dT):
         if dT > 0.05:
-            print("Warning: dT is larger than 0.05s, path may be discontinuous")
+            print("Warning: dT is large, path may be discontinuous")
         
         self.dT = dT
 
@@ -31,25 +31,31 @@ class SmoothPathPlanner:
         if headlandSpeed > vConstraints[0]:
             raise ValueError("Headland Speed should not be larger than V Max")
 
-        if headlandSpeedReverse > vConstraints[1]:
+        if headlandSpeedReverse < vConstraints[1]:
             raise ValueError("Headland Speed in reverse should not be smaller than V Min")
 
         if not (len(kConstraints) == 6 and len(vConstraints) == 6):
             raise TypeError('kConstraintsand/or vConstraints not of correct dimension.')
-        else:
-            self.kMax = kConstraints[0]
-            self.kMin = kConstraints[1]
-            self.kDotMax = kConstraints[2]
-            self.kDotMin = kConstraints[3]
-            self.kDDotMax = kConstraints[4]
-            self.kDDotMin = kConstraints[5]
 
-            self.vMax = vConstraints[0]
-            self.vMin = vConstraints[1]
-            self.vDotMax = vConstraints[2]
-            self.vDotMin = vConstraints[3]
-            self.vDDotMax = vConstraints[4]
-            self.vDDotMin = vConstraints[5]
+        if not (kConstraints[5] < 0):
+            raise ValueError('kDDotMin must be less than zero.')
+
+        if not (vConstraints[5] < 0):
+            raise ValueError('vDDotMin must be less than zero.')
+
+        self.kMax = kConstraints[0]
+        self.kMin = kConstraints[1]
+        self.kDotMax = kConstraints[2]
+        self.kDotMin = kConstraints[3]
+        self.kDDotMax = kConstraints[4]
+        self.kDDotMin = kConstraints[5]
+
+        self.vMax = vConstraints[0]
+        self.vMin = vConstraints[1]
+        self.vDotMax = vConstraints[2]
+        self.vDotMin = vConstraints[3]
+        self.vDDotMax = vConstraints[4]
+        self.vDDotMin = vConstraints[5]
 
         self.headlandSpeed = headlandSpeed
         self.headlandSpeedReverse = headlandSpeedReverse
@@ -709,7 +715,7 @@ class SmoothPathPlanner:
 
         return FullPath(self.dT, self.S1, self.C1, self.S2, self.C2, self.S3, self.C3, self.S4)
 
-    def planShortest(self):
+    def planShortest(self, displayLevel = 0):
         """
         Generic path planner which returns shortest path from start to goal.
 
@@ -730,12 +736,19 @@ class SmoothPathPlanner:
         shortestPathFinalTime = np.inf
 
         for i in range(len(turningTypes)):
-            #turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
+            turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
             pathType = turningTypes[i]
             self.setNominalCurvatures(pathType[0], pathType[1], pathType[2], pathType[3])
-            path = self.plan()
+            try:
+                path = self.plan()
+            except:
+                if displayLevel > 0:
+                    print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
+                continue
 
             if path == 0:
+                if displayLevel > 0:
+                    print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
                 continue
             elif path.finalTime < shortestPathFinalTime:
                 shortestPath = path
