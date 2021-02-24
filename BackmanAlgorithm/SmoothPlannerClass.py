@@ -323,7 +323,7 @@ class SmoothPathPlanner:
         rkplus1 = cos(S3[0][2]) * (omega_S3_tC3[1] - S3[0][1]) - sin(S3[0][2]) * (omega_S3_tC3[0] - S3[0][0])
         d = np.linalg.norm(self.omega_kplus2 - self.omega_k)
         
-        if np.abs(rkplus1 - rk) > d:
+        if np.abs(rkplus1 - rk) > d: #can't use this turning type
             raise Exception
 
         w = np.arcsin((rkplus1 - rk)/d)
@@ -369,7 +369,7 @@ class SmoothPathPlanner:
         d2 = np.linalg.norm(omega_S2_tC2 - omega_S2_tS2)
         d3 = np.linalg.norm(omega_S3_tC3 - omega_S3_tS3)
         l1 = (d2**2 - d3**2 + d1**2)/(2*d1)
-        if(l1 > d2):
+        if(l1 > d2): #can't use this turning types
             raise Exception
         l2 = np.sqrt(d2**2 - l1**2)
         signVal = 1 if (k_C2 < 0) else -1
