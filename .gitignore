@@ -51,8 +51,11 @@ Thumbs.db
 # PNG files produced by class
 *.png
 
-# unit Test File
-UnitTests.py
+# logs
+logs/
+
+#tests
+tests/
 
 #config files
 .vs/

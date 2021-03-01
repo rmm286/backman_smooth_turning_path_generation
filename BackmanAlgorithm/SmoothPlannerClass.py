@@ -371,6 +371,8 @@ class SmoothPathPlanner:
         l1 = (d2**2 - d3**2 + d1**2)/(2*d1)
         if(l1 > d2): #can't use this turning types
             raise Exception
+        elif(np.sign(l1) == -1 or np.sign(d2) == -1):
+            raise Exception
         l2 = np.sqrt(d2**2 - l1**2)
         signVal = 1 if (k_C2 < 0) else -1
         signVal = -signVal if (self.omega_kplus2[0] > self.omega_k[0] and k_C2 > 0) else signVal
@@ -389,7 +391,7 @@ class SmoothPathPlanner:
             plotArrows (optional): True if orientation data are to be plotted
         
         Output:
-            Saves plot to file "trajectory.png"
+            Saves plot to file "/logs/trajectory.png"
         """
 
         plt.figure(0)
@@ -420,13 +422,12 @@ class SmoothPathPlanner:
 
             plt.plot(self.omega_kplus2[0], self.omega_kplus2[1], 'b^')
 
-            plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+            plt.plot([(self.k_C1**-1)*cos(theta) + self.omega_k[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C1**-1)*sin(theta) + self.omega_k[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--', alpha = 0.1)
             if hasattr(self,'omega_kplus1'):
-                plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
+                plt.plot([(self.k_C2**-1)*cos(theta) + self.omega_kplus1[0] for theta in np.linspace(0, 2*np.pi, 25)],[(self.k_C2**-1)*sin(theta) + self.omega_kplus1[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--', alpha = 0.1)
                         
-            plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)], [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--')
-            plt.arrow(self.S1.poses[-1][0], self.S1.poses[-1][1], 0.1*cos(self.S1.poses[-1][2]), 0.1*sin(self.S1.poses[-1][2]), length_includes_head = True, width = 0.02, head_width = 0.03, color = 'r', alpha = 0.5)
-        
+            plt.plot([(self.k_C3**-1)*cos(theta) + self.omega_kplus2[0] for theta in np.linspace(0, 2*np.pi, 25)], [(self.k_C3**-1)*sin(theta) + self.omega_kplus2[1] for theta in np.linspace(0, 2*np.pi, 25)], 'r--', alpha = 0.1)
+            
         if plotArrows:
             if hasattr(self, 'S1'):
                 for i in range(0, len(self.S1.poses), int(len(self.S1.poses)/10)):
@@ -450,7 +451,7 @@ class SmoothPathPlanner:
                 for i in range(0, len(self.C3.poses), int(len(self.C3.poses)/10)):
                     plt.arrow(self.C3.poses[i][0], self.C3.poses[i][1], 0.1*cos(self.C3.poses[i][2]), 0.1*sin(self.C3.poses[i][2]), length_includes_head = True, width = 0.01, head_width = 0.03, color = 'r', alpha = 0.5)            
 
-        plt.savefig("trajectory.png")
+        plt.savefig("./logs/trajectory.png")
 
     def plotControls(self):
         """
@@ -481,7 +482,7 @@ class SmoothPathPlanner:
         plt.plot(timeseries_C3, [i[0] for i in self.C3.controls])
         plt.plot(timeseries_S4, [i[0] for i in self.S4.controls])
 
-        plt.savefig("velProfile.png")
+        plt.savefig("./logs/velProfile.png")
 
         plt.figure(2)
         plt.clf()
@@ -497,7 +498,7 @@ class SmoothPathPlanner:
         plt.plot(timeseries_C3, [i[1] for i in self.C3.controls])
         plt.plot(timeseries_S4, [i[1] for i in self.S4.controls])
 
-        plt.savefig("kProfile.png")
+        plt.savefig("./logs/kProfile.png")
 
     def plan(self):
         """
@@ -515,6 +516,9 @@ class SmoothPathPlanner:
 
         if not hasattr(self, 'k_C1'):
             raise ValueError('setNominalCurvatures has not been called successfully on this instance.')
+
+        if self.vMin >= 0.0 and self.reverse:
+            raise ValueError('Cant reverse if vMin > 0')
 
         self.path_is_not_feasible = True
 
@@ -586,6 +590,7 @@ class SmoothPathPlanner:
 
             ################ generate third connecting spiral ################
             
+            xo = [0, 0, 0]
             if self.cut_v_S4:
                 if not(hasattr(self,'vC3_index')):
                     #initial guess: C3 is long enough that vC3 is used completely
@@ -637,13 +642,15 @@ class SmoothPathPlanner:
                 
                 self.S2.placePath(self.S1.poses[-1][0], self.S1.poses[-1][1], self.S1.poses[-1][2])
                 omega_S2_tC2 = np.array([self.S2.poses[-1][0] - self.k_C2**-1 *sin(self.S2.poses[-1][2]), self.S2.poses[-1][1] + self.k_C2**-1*cos(self.S2.poses[-1][2])])
-                r = np.linalg.norm(omega_S2_tC2 - self.omega_k)
-                rotAngle = np.arccos((self.omega_kplus1[0] - self.omega_k[0])/r) - np.arccos((omega_S2_tC2[0] - self.omega_k[0]) /r)
+                #r = np.linalg.norm(omega_S2_tC2 - self.omega_k)
+                #rotAngle = np.arccos((self.omega_kplus1[0] - self.omega_k[0])/r) - np.arccos((omega_S2_tC2[0] - self.omega_k[0]) /r)
+                rotAngle = np.arctan2(self.omega_kplus1[1] - self.omega_k[1],self.omega_kplus1[0] - self.omega_k[0]) - np.arctan2(omega_S2_tC2[1]- self.omega_k[1], omega_S2_tC2[0]- self.omega_k[0])
                 self.S2.rotateAboutPoint(self.omega_k[0], self.omega_k[1], rotAngle)
                 self.S3.placePath(self.S4.poses[0][0], self.S4.poses[0][1], self.S4.poses[0][2], False)
                 omega_S3_tS3 = np.array([self.S3.poses[0][0] - self.k_C2**-1 *sin(self.S3.poses[0][2]), self.S3.poses[0][1] + self.k_C2**-1*cos(self.S3.poses[0][2])])
-                r = np.linalg.norm(omega_S3_tS3 - self.omega_kplus2)
-                rotAngle =  np.arccos((self.omega_kplus1[0] - self.omega_kplus2[0])/r) - np.arccos((omega_S3_tS3[0]- self.omega_kplus2[0])/r)
+                #r = np.linalg.norm(omega_S3_tS3 - self.omega_kplus2)
+                #rotAngle =  np.arccos((self.omega_kplus1[0] - self.omega_kplus2[0])/r) - np.arccos((omega_S3_tS3[0]- self.omega_kplus2[0])/r)
+                rotAngle = np.arctan2(self.omega_kplus1[1] - self.omega_kplus2[1],self.omega_kplus1[0] - self.omega_kplus2[0]) - np.arctan2(omega_S3_tS3[1]- self.omega_kplus2[1], omega_S3_tS3[0]- self.omega_kplus2[0])
                 self.S3.rotateAboutPoint(self.omega_kplus2[0], self.omega_kplus2[1], rotAngle)
 
                 ################ make C2 segment ################
@@ -679,19 +686,17 @@ class SmoothPathPlanner:
             ################ Check Feasibility ################
             self.path_is_not_feasible = False
 
-            if np.abs(self.C1.angle) > 1.8*np.pi:
-                self.k_C1 = self.k_C1 - np.sign(self.k_C1)*0.1*self.kMax
-                if np.abs(self.k_C1) < 10**-10:
-                    return 0
-                
+            if np.abs(self.C1.angle) > 2*np.pi:
+                self.k_C1 = self.k_C1 + np.sign(self.k_C0-self.k_C1)*self.dT
+                if np.abs(self.k_C0 - self.k_C1) < 0.05:
+                    self.k_C1 = self.k_C0
                 self.path_is_not_feasible = True
                 continue
 
-            if np.abs(self.C3.angle) > 1.8*np.pi:
-                self.k_C3 = self.k_C3 - np.sign(self.k_C3)*0.1*self.kMax
-                if np.abs(self.k_C3) <= 10**-10:
-                    return 0 
-
+            if np.abs(self.C3.angle) > 2*np.pi:
+                self.k_C3 = self.k_C3 + np.sign(self.k_C4 - self.k_C3)*self.dT
+                if np.abs(self.k_C4 - self.k_C3) < 0.05:
+                    self.k_C3 = self.k_C4
                 self.path_is_not_feasible = True
                 continue
             
@@ -707,52 +712,76 @@ class SmoothPathPlanner:
                     self.vC3_index = self.vC3_index_new
                     self.path_is_not_feasible = True
             
-            if (self.C1.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S2.poses[0][0:2] - self.S1.poses[-1][0:2]) > self.dT*self.vMax):
-                return 0
+            if (self.k_C1 == self.k_C0):
+                if (np.linalg.norm(self.S2.poses[0][0:2] - self.S1.poses[-1][0:2]) > self.dT*self.vMax):
+                    return 0
+                if (np.abs(self.S2.poses[0][2] - self.S1.poses[-1][2]) > 0.01):
+                    return 0
 
-            if (self.C3.arcLen < self.dT*self.vMax) and (np.linalg.norm(self.S4.poses[0][0:2] - self.S3.poses[-1][0:2]) > self.dT*self.vMax):
-                return 0
+            if (self.k_C3 == self.k_C4):
+                if (np.linalg.norm(self.S4.poses[0][0:2] - self.S3.poses[-1][0:2]) > self.dT*self.vMax):
+                    return 0
+                if (np.abs(self.S4.poses[0][2] - self.S3.poses[-1][2]) > 0.01):
+                    return 0
 
         return FullPath(self.dT, self.S1, self.C1, self.S2, self.C2, self.S3, self.C3, self.S4)
 
-    def planShortest(self, displayLevel = 0):
-        """
-        Generic path planner which returns shortest path from start to goal.
+def planShortest(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse, source, goal, dT, displayLevel = 0):
+    """
+    Generic path planner which returns shortest path from start to goal.
 
-        Output:
-            FullPath: Full Path object
-        """
-        RSR = [self.kMin, 0, self.kMin, False]
-        LSL = [self.kMax, 0, self.kMax, False]
-        LRL = [self.kMax, self.kMin, self.kMax, False]
-        RLR = [self.kMin, self.kMax, self.kMin, False]
-        LSR = [self.kMax, 0, self.kMin, False]
-        RSL = [self.kMin, 0, self.kMax, False]
-        R1L1R = [self.kMin, self.kMax, self.kMin, True]
-        L1R1L = [self.kMax, self.kMin, self.kMax, True]
+    Output:
+        FullPath: Full Path object
+    """
+    kMin = kConstraints[1]
+    kMax = kConstraints[0]
+    vMin = vConstraints[1]
 
+    RSR = [kMin, 0, kMin, False]
+    LSL = [kMax, 0, kMax, False]
+    LRL = [kMax, kMin, kMax, False]
+    RLR = [kMin, kMax, kMin, False]
+    LSR = [kMax, 0, kMin, False]
+    RSL = [kMin, 0, kMax, False]
+    R1L1R = [kMin, kMax, kMin, True]
+    L1R1L = [kMax, kMin, kMax, True]
+
+    if vMin < 0.0:
         turningTypes = [RSR,LSL,LRL,RLR,LSR,RSL,R1L1R,L1R1L]
+        turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
+    else: #can't reverse
+        turningTypes = [RSR,LSL,LRL,RLR,LSR,RSL]
+        turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL']
 
-        shortestPathFinalTime = np.inf
+    shortestPathFinalTime = np.inf
 
-        for i in range(len(turningTypes)):
-            turningTypeNames = ['RSR','LSL','LRL','RLR','LSR','RSL','R1L1R','L1R1L']
-            pathType = turningTypes[i]
-            self.setNominalCurvatures(pathType[0], pathType[1], pathType[2], pathType[3])
-            try:
-                path = self.plan()
-            except:
-                if displayLevel > 0:
-                    print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
-                continue
+    for i in range(len(turningTypes)):
+        planner = SmoothPathPlanner(dT)
+        planner.setConstraints(kConstraints, vConstraints, headlandSpeed, headlandSpeedReverse)
+        planner.setStartAndGoal(source, goal)
 
-            if path == 0:
-                if displayLevel > 0:
-                    print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
-                continue
-            elif path.finalTime < shortestPathFinalTime:
-                shortestPath = path
-                shortestPathFinalTime = path.finalTime
+        pathType = turningTypes[i]
+        planner.setNominalCurvatures(pathType[0], pathType[1], pathType[2], pathType[3])
+        try:
+            path = planner.plan()
+            if displayLevel > 1:
+                planner.plotPaths()
+                planner.plotControls()
+        except:
+            if displayLevel > 0:
+                print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
+            continue
 
-        return shortestPath
+        if path == 0:
+            if displayLevel > 0:
+                print("Path of type:", turningTypeNames[i], " encountered error, continuing.")
+            continue
+        elif path.finalTime < shortestPathFinalTime:
+            shortestPath = path
+            shortestPathFinalTime = path.finalTime
+        if displayLevel > 0:
+            print("Path of type:", turningTypeNames[i], " finished, input to continue.")
+            input("...")
+
+    return shortestPath
 # TODO: make sure tolerances make sense, maybe pass tolerances as parameters
