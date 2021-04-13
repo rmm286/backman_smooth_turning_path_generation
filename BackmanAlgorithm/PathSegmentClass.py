@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 from numpy import sin, cos, tan
 import matplotlib.pyplot as plt
@@ -269,11 +268,13 @@ class C2LineSegment(PathSegment):
             v2: velocity profile of V_C22 arc segment (array of floats)
             start: SE2 position of start point (1x3 array of floats)
             end: SE2 position of end point (1x3 array of floats)
-            center: R2 position of center of turning (1x2 of floats)
             dT: timestep, must be timestep of overall planning profile (float)
         """
+        start = np.array(start)
+        end = np.array(end)
+
         segmentLength = np.linalg.norm(end[0:2]-start[0:2])
-        maxTimeToTraverse = segmentLength/np.amin(np.append(v1,v2))
+        maxTimeToTraverse = segmentLength/np.amin(np.append(v1[v1 != 0],v2[v2 != 0]))
         maxStepsToTraverse = int(maxTimeToTraverse/dT) + 1
         self.poses = np.zeros([maxStepsToTraverse,3])
         self.controls = np.zeros([maxStepsToTraverse,2])
@@ -352,8 +353,11 @@ class FullPath(PathSegment):
         Instantiate a final path object which contains all path elements of full path.
 
         Input: 
-            args: series of sequential path segments passed in order to generate final path. 
+            args[0]: dT 
+            args[1:]: series of sequential path segments passed in order to generate final path.
         """
+        if len(args) < 2:
+            raise ValueError("Full path takes dT and at least one path segment")
 
         self.poses = args[1].poses
         self.controls = args[1].controls
